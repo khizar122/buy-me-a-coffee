@@ -1,0 +1,29 @@
+/* app/auth/auth.css */
+.auth-layout {
+  display: flex;
+  /* min-height: 100vh; */
+  overflow: hidden;
+  /* Prevent scrolling */
+}
+
+.sidebar {
+  width: 50%;
+  position: relative;
+  /* For image positioning */
+}
+.form-container {
+  flex: 1; /* This will also take up the remaining space (50% in this case) */
+  padding: 2rem; /* Adds some padding */
+  display: flex;
+  justify-content: center; /* Center the form horizontally */
+  align-items: center; /* Center the form vertically */
+  background-color: #ffffff; /* Optional background color for the form container */
+  overflow: hidden; /* Prevent scroll bars in the form container */
+}
+.sidebar-image {
+  width: 100%;
+  height: 110vh;
+  /* Full viewport height */
+  object-fit: cover;
+
+}
