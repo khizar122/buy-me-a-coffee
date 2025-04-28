@@ -1,0 +1,66 @@
+{
+  "compilerOptions": {
+    "target": "es5", // ES5 for broad browser compatibility
+    "lib": ["dom", "dom.iterable", "esnext"], // Include DOM and modern ES features
+    "allowJs": true, // Allow JavaScript files
+    "skipLibCheck": true, // Skip type checks of declaration files for performance
+    "strict": true, // Enable strict type checking
+    "noImplicitAny": true, // Prevent `any` types
+    "strictNullChecks": true, // Ensure null/undefined are handled explicitly
+    "forceConsistentCasingInFileNames": true, // Prevent inconsistent file name casing
+    "noEmit": true, // Do not emit compiled files
+    "esModuleInterop": true, // Ensure compatibility with ES module imports
+    "module": "esnext", // Use modern module resolution
+    "moduleResolution": "node", // Resolve modules like Node.js
+    "resolveJsonModule": true, // Allow importing JSON files
+    "isolatedModules": true, // Ensure each file can be transpiled in isolation
+    "jsx": "preserve", // Preserve JSX for Next.js
+    "incremental": true, // Enable incremental compilation for performance
+    "baseUrl": ".", // Set base URL for paths
+    "paths": {
+      "@/*": ["./*"], // Root-level alias
+      "@/components/*": ["components/*"],
+      "@/lib/*": ["lib/*"],
+      "@/actions/*": ["actions/*"],
+      "@/validators/*": ["validators/*"],
+      "@/containers/*": ["containers/*"],
+      "@/seeders/*": ["seeders/*"],
+      "@/services/*": ["services/*"]
+    },
+    "strictBindCallApply": true, // Ensure bind/call/apply is typed correctly
+    "noFallthroughCasesInSwitch": true, // Prevent fallthrough in switch cases
+    "noUnusedLocals": true, // Report unused local variables
+    "noUnusedParameters": true, // Report unused function parameters
+    "exactOptionalPropertyTypes": true, // Ensure optional properties are accurately typed
+    "plugins": [
+      {
+        "name": "next" // Next.js TypeScript plugin
+      }
+    ]
+  },
+  "include": [
+    "next-env.d.ts", // Default Next.js type definitions
+    "actions/**/*.ts", // Actions folder
+    "app/**/*.ts", // All TypeScript files in app
+    "app/**/*.tsx", // All JSX/TSX files in app
+    "components/**/*.ts", // TypeScript files in components
+    "components/**/*.tsx", // JSX/TSX files in components
+    "containers/**/*.ts", // Containers folder TypeScript files
+    "containers/**/*.tsx", // Containers folder JSX/TSX files
+    "lib/**/*.ts", // Utility files
+    "validators/**/*.ts", // Schema definitions
+    ".next/types/**/*.ts", // Next.js auto-generated types
+    "next.config.mjs", // Next.js configuration file
+    "prisma/schema.prisma", // Prisma schema file
+    "prisma/seed.js" // Prisma seed file
+  ],
+  "exclude": [
+    "node_modules", // Ignore node_modules
+    ".next", // Ignore Next.js build folder
+    "out", // Ignore exported static files
+    "dist", // Ignore build artifacts
+    "public", // Ignore public assets
+    "prisma/migrations", // Ignore Prisma migration files
+    "prisma/migration_lock.toml" // Ignore Prisma lock file
+  ]
+}
