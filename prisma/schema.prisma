@@ -1,0 +1,208 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // or mysql/sqlite if you're using that
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  BigInt      @id @default(autoincrement())
+  username            String      @unique
+  email               String      @unique
+  passwordHash        String
+  displayName         String
+  creatorTagline      String?
+  bio                 String?
+  aboutMe             String?
+  profilePictureUrl   String?
+  featuredVideoUrl    String?
+  supportTerm         String?
+  themeColor          String?
+  showSupporterCount  Boolean     @default(true)
+  socialShareHandle   String?
+  socialLinks         Json?
+  isCreator           Boolean     @default(false)
+  createdAt           DateTime    @default(now())
+
+  wallet              Wallet?
+  paymentMethods      PaymentMethod[]
+  paymentsMade        Payment[]   @relation("PaymentsMade")
+  paymentsReceived    Payment[]   @relation("PaymentsReceived")
+  posts               Post[]
+  comments            Comment[]
+  likes               Like[]
+  extras              Extra[]
+  extraPurchases      ExtraPurchase[]
+  followsFollowing    Follow[]    @relation("Following")
+  followsFollowers    Follow[]    @relation("Followers")
+  notifications       Notification[]
+  files               File[]
+  withdrawals         Withdrawal[]
+  subscriptionPlans   SubscriptionPlan[]
+  memberships         Membership[]
+}
+
+model Wallet {
+  id         BigInt     @id @default(autoincrement())
+  user       User       @relation(fields: [userId], references: [id])
+  userId     BigInt     @unique
+  balance    Decimal    @default(0.0)
+  updatedAt  DateTime   @updatedAt
+
+  withdrawals Withdrawal[]
+}
+
+model PaymentMethod {
+  id             BigInt     @id @default(autoincrement())
+  user           User       @relation(fields: [userId], references: [id])
+  userId         BigInt
+  provider       String
+  methodDetails  String
+  isDefault      Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+}
+
+model Payment {
+  id            BigInt     @id @default(autoincrement())
+  supporter     User       @relation("PaymentsMade", fields: [supporterId], references: [id])
+  supporterId   BigInt
+  creator       User       @relation("PaymentsReceived", fields: [creatorId], references: [id])
+  creatorId     BigInt
+  amount        Decimal
+  message       String?
+  isRecurring   Boolean    @default(false)
+  status        String     @default("success")
+  createdAt     DateTime   @default(now())
+
+  refund        Refund?
+}
+
+model Refund {
+  id             BigInt     @id @default(autoincrement())
+  payment        Payment    @relation(fields: [paymentId], references: [id])
+  paymentId      BigInt     @unique
+  refundedAmount Decimal
+  reason         String?
+  refundedAt     DateTime   @default(now())
+}
+
+model Withdrawal {
+  id           BigInt     @id @default(autoincrement())
+  creator      User       @relation(fields: [creatorId], references: [id])
+  creatorId    BigInt
+  wallet       Wallet     @relation(fields: [walletId], references: [id])
+  walletId     BigInt
+  amount       Decimal
+  status       String     @default("pending")
+  requestedAt  DateTime   @default(now())
+  processedAt  DateTime?
+}
+
+model SubscriptionPlan {
+  id          BigInt      @id @default(autoincrement())
+  creator     User        @relation(fields: [creatorId], references: [id])
+  creatorId   BigInt
+  name        String
+  price       Decimal
+  benefits    String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+
+  memberships Membership[]
+}
+
+model Membership {
+  id           BigInt             @id @default(autoincrement())
+  supporter    User               @relation(fields: [supporterId], references: [id])
+  supporterId  BigInt
+  plan         SubscriptionPlan   @relation(fields: [planId], references: [id])
+  planId       BigInt
+  startedAt    DateTime           @default(now())
+  canceledAt   DateTime?
+}
+
+model Extra {
+  id           BigInt     @id @default(autoincrement())
+  creator      User       @relation(fields: [creatorId], references: [id])
+  creatorId    BigInt
+  title        String
+  description  String?
+  price        Decimal
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+
+  purchases    ExtraPurchase[]
+}
+
+model ExtraPurchase {
+  id            BigInt     @id @default(autoincrement())
+  supporter     User       @relation(fields: [supporterId], references: [id])
+  supporterId   BigInt
+  extra         Extra      @relation(fields: [extraId], references: [id])
+  extraId       BigInt
+  amount        Decimal
+  purchasedAt   DateTime   @default(now())
+}
+
+model Post {
+  id          BigInt     @id @default(autoincrement())
+  creator     User       @relation(fields: [creatorId], references: [id])
+  creatorId   BigInt
+  title       String
+  content     String
+  isPublic    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+
+  comments    Comment[]
+  likes       Like[]
+}
+
+model Comment {
+  id        BigInt     @id @default(autoincrement())
+  post      Post       @relation(fields: [postId], references: [id])
+  postId    BigInt
+  user      User       @relation(fields: [userId], references: [id])
+  userId    BigInt
+  content   String
+  createdAt DateTime   @default(now())
+}
+
+model Like {
+  id        BigInt     @id @default(autoincrement())
+  post      Post       @relation(fields: [postId], references: [id])
+  postId    BigInt
+  user      User       @relation(fields: [userId], references: [id])
+  userId    BigInt
+  likedAt   DateTime   @default(now())
+}
+
+model Follow {
+  id           BigInt     @id @default(autoincrement())
+  follower     User       @relation("Followers", fields: [followerId], references: [id])
+  followerId   BigInt
+  followee     User       @relation("Following", fields: [creatorId], references: [id])
+  creatorId    BigInt
+  followedAt   DateTime   @default(now())
+}
+
+model Notification {
+  id          BigInt     @id @default(autoincrement())
+  user        User       @relation(fields: [userId], references: [id])
+  userId      BigInt
+  content     String
+  isRead      Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+}
+
+model File {
+  id           BigInt     @id @default(autoincrement())
+  uploadedBy   User       @relation(fields: [uploadedById], references: [id])
+  uploadedById BigInt
+  fileUrl      String
+  fileType     String
+  uploadedAt   DateTime   @default(now())
+}
+
