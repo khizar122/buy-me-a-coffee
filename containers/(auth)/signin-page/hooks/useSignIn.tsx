@@ -1,10 +1,9 @@
+import { signInUser } from '@/actions/auth';
 import { SignInValidator } from '@/validators';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback, useMemo, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-
-import { signIn as clientSignIn } from 'next-auth/react'; // Import NextAuth's signIn
 
 export const useSignIn = () => {
   const defaultValues = useMemo(
@@ -35,25 +34,33 @@ export const useSignIn = () => {
     async (values: z.infer<typeof SignInValidator>) => {
       clearMessages(); // Reset states
       setLoading(true);
-      try {
-        const signInResponse = await clientSignIn('credentials', {
-          email: values.email,
-          password: values.password,
-          redirect: true, // Enable redirection
-          callbackUrl: '/dashboard'
-        });
 
-        if (signInResponse?.error) {
-          setError(signInResponse.error || 'Sign-in failed.');
-        } else {
-          setSuccessMessage('Sign-in successful.');
-        }
+      try {
+        // Using the server action directly
+        startTransition(async () => {
+          const result = await signInUser({
+            email: values.email,
+            password: values.password,
+            isRemember: values.isRemember || false
+          });
+
+          if (result.success) {
+            setSuccessMessage(
+              'Sign-in successful. Redirecting to dashboard...'
+            );
+            // Server-side redirection will be handled in the action
+            window.location.href = '/dashboard';
+          } else {
+            setError(result.error || 'Sign-in failed.');
+          }
+
+          setLoading(false);
+        });
       } catch (err) {
         console.error('Sign-in Error:', err);
         setError(
           'Unable to connect to the server. Please check your internet connection and try again.'
         );
-      } finally {
         setLoading(false);
       }
     },

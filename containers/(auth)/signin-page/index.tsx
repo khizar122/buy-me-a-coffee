@@ -1,6 +1,7 @@
 'use client';
 
 import { FormError } from '@/components/form-error';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -210,26 +211,8 @@ const BlueDrinkGlass = () => {
 };
 
 const SignInContainer = () => {
-  const {
-    form,
-    error,
-    successMessage,
-    onSubmit: originalOnSubmit,
-    isPending,
-    loading
-  } = useSignIn();
-
-  // Modified onSubmit to navigate to dashboard after successful login
-  const onSubmit = async (data) => {
-    try {
-      await originalOnSubmit(data);
-      // Navigate to dashboard after successful login
-      window.location.href = '/dashboard';
-    } catch (error) {
-      // Error handling is already managed in the original onSubmit
-      console.error('Login failed:', error);
-    }
-  };
+  const { form, error, successMessage, onSubmit, isPending, loading } =
+    useSignIn();
 
   // Add animation styles
   useEffect(() => {
@@ -481,7 +464,7 @@ const SignInContainer = () => {
                 <FormControl>
                   <Input
                     {...field}
-                    disabled={isPending}
+                    disabled={isPending || loading}
                     placeholder="Enter your email"
                     type="email"
                     className="form-input"
@@ -503,13 +486,34 @@ const SignInContainer = () => {
                 <FormControl>
                   <Input
                     {...field}
-                    disabled={isPending}
+                    disabled={isPending || loading}
                     placeholder="Enter your password"
                     type="password"
                     className="form-input"
                   />
                 </FormControl>
                 <FormMessage className="text-red-500" />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="isRemember"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-2">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    disabled={isPending || loading}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel className="text-sm text-blue-800">
+                    Remember me
+                  </FormLabel>
+                </div>
               </FormItem>
             )}
           />
@@ -523,20 +527,61 @@ const SignInContainer = () => {
             </Link>
             <button
               type="submit"
-              disabled={isPending}
-              className="px-4 py-2 rounded-lg text-lg focus:ring-1 focus:ring-blue-400"
+              disabled={isPending || loading}
+              className="px-4 py-2 rounded-lg text-lg focus:ring-1 focus:ring-blue-400 flex items-center"
               style={{
                 backgroundColor: '#3B82F6', // Sky blue (Tailwind blue-500)
                 color: '#ffffff'
               }}
             >
-              Sign In
+              {loading ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Signing In...
+                </>
+              ) : (
+                'Sign In'
+              )}
             </button>
           </div>
           {error && <FormError message={error} />}
-          {/* <FormSuccess message={successMessage} /> */}
+          {successMessage && (
+            <div className="text-green-600 font-medium text-center mt-4">
+              {successMessage}
+            </div>
+          )}
 
-          {/* Promotional Banner */}
+          {/* Link to sign up */}
+          <div className="text-center mt-6">
+            <p className="text-base text-blue-800">
+              Don't have an account?{' '}
+              <Link
+                href="/signup"
+                className="text-blue-600 hover:underline font-medium"
+              >
+                Sign Up
+              </Link>
+            </p>
+          </div>
         </form>
       </Form>
     </div>

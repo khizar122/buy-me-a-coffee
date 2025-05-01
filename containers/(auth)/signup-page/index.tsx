@@ -50,7 +50,7 @@ const SignUpContainer = () => {
           <div className="flex flex-col gap-2 ">
             <FormField
               control={form.control}
-              name="name"
+              name="username"
               render={({ field }) => (
                 <FormItem className="bg-white">
                   <FormLabel
@@ -59,14 +59,14 @@ const SignUpContainer = () => {
                       font.className
                     )}
                   >
-                    Full Name
+                    Username
                   </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       className="rounded-[6px] pl-4 h-10 w-full" // Adjusted width
                       disabled={isPending}
-                      placeholder="Enter Full Name"
+                      placeholder="Enter Username"
                       type="text"
                     />
                   </FormControl>
@@ -161,7 +161,6 @@ const SignUpContainer = () => {
           <Button
             type="submit"
             className="px-3 py-2 border border-[#D1D5DB] rounded-lg text-base focus:ring-1 focus:ring-[#D1D5DB] focus:border-[#D1D5DB] w-full"
-            
           >
             Sign Up
             {loading && <FaSpinner className="animate-spin ml-2" />}
