@@ -1,4 +1,3 @@
-// app/actions/auth.ts
 'use server';
 
 import { getJwtSecretKey } from '@/lib/auth';
@@ -6,8 +5,55 @@ import { prisma } from '@/lib/db/prisma';
 import { compare, hash } from 'bcrypt-ts';
 import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
+import { Resend } from 'resend';
 import { z } from 'zod';
 
+// Initialize Resend for email sending
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Helper function to generate OTP
+function generateOTP() {
+  // Generate a 4-digit OTP
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+// Helper function to send OTP email using Resend
+async function sendVerificationEmail(email, otp, username) {
+  try {
+    console.log("tes",email)
+    // Ensure username is a string
+    const safeUsername = username?.toString() || 'User';
+
+    const { data, error } = await resend.emails.send({
+      from: 'onboarding@resend.dev', // Use this default Resend address for testing
+      to: email,
+      subject: 'Verify Your Email',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
+          <h2 style="color: #333; text-align: center;">Email Verification</h2>
+          <p>Hello ${safeUsername},</p>
+          <p>Thank you for signing up! To complete your registration, please use the following verification code:</p>
+          <div style="background-color: #f7f7f7; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; margin: 20px 0;">
+            ${otp}
+          </div>
+          <p>This code will expire in 15 minutes.</p>
+          <p>If you didn't request this verification, please ignore this email.</p>
+          <p>Best regards,<br>Your App Team</p>
+        </div>
+      `
+    });
+
+    if (error) {
+      console.error('Failed to send verification email:', error);
+      return { success: false, error: 'Failed to send verification email' };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to send verification email:', error);
+    return { success: false, error: 'Failed to send verification email' };
+  }
+}
 
 // Input validation schemas
 const RegisterSchema = z.object({
@@ -22,6 +68,15 @@ const SignInSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1, { message: 'Password is required' }),
   isRemember: z.boolean().optional().default(false)
+});
+
+const VerifyOTPSchema = z.object({
+  email: z.string().email(),
+  otp: z.string().length(4)
+});
+
+const ResendOTPSchema = z.object({
+  email: z.string().email()
 });
 
 export async function registerUser(userData) {
@@ -66,7 +121,12 @@ export async function registerUser(userData) {
     // Hash the password
     const hashedPassword = await hash(data.password, 10);
 
-    // Create the user
+    // Generate OTP for email verification
+    const otp = generateOTP();
+    // Set OTP expiry (15 minutes from now)
+    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+
+    // Create the user with verification data
     const newUser = await prisma.user.create({
       data: {
         username: data.username,
@@ -74,17 +134,42 @@ export async function registerUser(userData) {
         passwordHash: hashedPassword,
         displayName: data.displayName,
         isCreator: data.isCreator,
+        isVerified: false,
+        verificationCode: otp,
+        verificationExpiry: otpExpiry,
         // Initialize empty JSON for socialLinks
         socialLinks: {}
       }
     });
 
-    // Remove sensitive information before sending response
-    const { passwordHash, ...userWithoutPassword } = newUser;
+    // Send verification email
+    const emailResult = await sendVerificationEmail(
+      data.email,
+      otp,
+      data.username
+    );
 
+    if (!emailResult.success) {
+      console.error('Failed to send verification email:', emailResult.error);
+      // We still return success since the user was created, but log the email failure
+    }
+
+    // Store email in cookies for verification flow - use await with cookies()
+    const cookieStore = cookies();
+    await cookieStore.set({
+      name: 'pending-verification-email',
+      value: data.email,
+      httpOnly: true,
+      path: '/',
+      maxAge: 60 * 30, // 30 minutes
+      sameSite: 'strict'
+    });
+
+    // Return success without sensitive information
     return {
       success: true,
-      user: userWithoutPassword
+      message: 'Please check your email for verification code',
+      email: data.email
     };
   } catch (error) {
     console.error('Registration error:', error);
@@ -121,6 +206,44 @@ export async function signInUser(userData) {
       };
     }
 
+    // Check if user is verified
+    if (!user.isVerified) {
+      // Generate new OTP for verification
+      const otp = generateOTP();
+      const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+
+      // Update user with new verification code
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          verificationCode: otp,
+          verificationExpiry: otpExpiry
+        }
+      });
+
+      // Send verification email
+      await sendVerificationEmail(email, otp, user.username);
+
+      // Store email in cookies for verification flow - use await with cookies()
+      const cookieStore = cookies();
+      await cookieStore.set({
+        name: 'pending-verification-email',
+        value: email,
+        httpOnly: true,
+        path: '/',
+        maxAge: 60 * 30, // 30 minutes
+        sameSite: 'strict'
+      });
+
+      return {
+        success: false,
+        error:
+          'Email not verified. Please check your email for a verification code.',
+        needsVerification: true,
+        email: email
+      };
+    }
+
     // Verify password
     const passwordMatch = await compare(password, user.passwordHash);
 
@@ -134,20 +257,21 @@ export async function signInUser(userData) {
     // Create session token
     const tokenExpiration = isRemember ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7; // 30 days or 7 days
 
-    // Create JWT token
+    // Create JWT token with proper object payload
     const token = await new SignJWT({
       id: user.id.toString(),
       email: user.email,
       username: user.username,
-      isCreator: user.isCreator
+      isCreator: user.isCreator ? true : false // Ensure boolean value
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime(`${tokenExpiration}s`)
       .sign(getJwtSecretKey());
 
-    // Set cookie
-    cookies().set({
+    // Set cookie - use await with cookies()
+    const cookieStore = cookies();
+    await cookieStore.set({
       name: 'auth-token',
       value: token,
       httpOnly: true,
@@ -157,12 +281,15 @@ export async function signInUser(userData) {
       sameSite: 'strict'
     });
 
-    // Remove sensitive information before sending response
-    const { passwordHash, ...userWithoutPassword } = user;
-
     return {
       success: true,
-      user: userWithoutPassword
+      user: {
+        id: user.id.toString(),
+        email: user.email,
+        username: user.username,
+        displayName: user.displayName,
+        isCreator: user.isCreator
+      }
     };
   } catch (error) {
     console.error('Sign-in error:', error);
@@ -172,9 +299,140 @@ export async function signInUser(userData) {
     };
   }
 }
+
+export async function verifyOTP(data) {
+  try {
+    // Validate input data
+    const validatedData = VerifyOTPSchema.safeParse(data);
+
+    if (!validatedData.success) {
+      return {
+        success: false,
+        error: 'Invalid verification data'
+      };
+    }
+
+    const { email, otp } = validatedData.data;
+
+    // Find the user
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        error: 'User not found'
+      };
+    }
+
+    // Check if OTP is correct and not expired
+    if (user.verificationCode !== otp) {
+      return {
+        success: false,
+        error: 'Invalid verification code'
+      };
+    }
+
+    if (user.verificationExpiry && user.verificationExpiry < new Date()) {
+      return {
+        success: false,
+        error: 'Verification code has expired'
+      };
+    }
+
+    // Mark user as verified
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isVerified: true,
+        verificationCode: null,
+        verificationExpiry: null
+      }
+    });
+
+    // Clear the pending verification email cookie - use await with cookies()
+    const cookieStore = cookies();
+    await cookieStore.delete('pending-verification-email');
+
+    return {
+      success: true,
+      message: 'Email verified successfully'
+    };
+  } catch (error) {
+    console.error('Verification error:', error);
+    return {
+      success: false,
+      error: 'An error occurred during verification'
+    };
+  }
+}
+
+export async function resendOTP(data) {
+  try {
+    // Validate input data
+    const validatedData = ResendOTPSchema.safeParse(data);
+
+    if (!validatedData.success) {
+      return {
+        success: false,
+        error: 'Invalid email'
+      };
+    }
+
+    const { email } = validatedData.data;
+
+    // Find the user
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        error: 'User not found'
+      };
+    }
+
+    // Generate new OTP
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+
+    // Update user with new OTP
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationCode: otp,
+        verificationExpiry: otpExpiry
+      }
+    });
+
+    // Send verification email
+    const emailResult = await sendVerificationEmail(email, otp, user.username);
+
+    if (!emailResult.success) {
+      return {
+        success: false,
+        error: emailResult.error || 'Failed to send verification email'
+      };
+    }
+
+    return {
+      success: true,
+      message: 'Verification code has been resent'
+    };
+  } catch (error) {
+    console.error('Resend OTP error:', error);
+    return {
+      success: false,
+      error: 'An error occurred while resending the verification code'
+    };
+  }
+}
+
 export async function signOutUser() {
   try {
-    // Get the cookies instance
+    // Get the cookies instance and await operations
     const cookieStore = cookies();
 
     // Check if the auth-token cookie exists before attempting to delete it
@@ -185,7 +443,7 @@ export async function signOutUser() {
     );
 
     // Delete the auth-token cookie with complete options to ensure it's properly removed
-    cookieStore.delete({
+    await cookieStore.delete({
       name: 'auth-token',
       path: '/',
       domain: undefined, // Use the current domain

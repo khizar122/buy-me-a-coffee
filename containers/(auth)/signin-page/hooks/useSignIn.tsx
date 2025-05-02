@@ -1,9 +1,12 @@
-import { signInUser } from '@/actions/auth';
 import { SignInValidator } from '@/validators';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback, useMemo, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { signInUser } from '@/actions/auth';
 
 export const useSignIn = () => {
   const defaultValues = useMemo(
@@ -15,6 +18,7 @@ export const useSignIn = () => {
     []
   );
 
+  const router = useRouter();
   const form = useForm<z.infer<typeof SignInValidator>>({
     resolver: zodResolver(SignInValidator),
     defaultValues
@@ -48,10 +52,23 @@ export const useSignIn = () => {
             setSuccessMessage(
               'Sign-in successful. Redirecting to dashboard...'
             );
-            // Server-side redirection will be handled in the action
-            window.location.href = '/dashboard';
+            toast.success('Sign-in successful');
+
+            // Redirect to dashboard
+            router.push('/dashboard');
           } else {
+            // Special case for unverified users
+            if (result.needsVerification) {
+              toast.info('Email verification required');
+              // Redirect to verify OTP page
+              router.push(
+                `/verify-otp?email=${encodeURIComponent(result.email)}&from=login`
+              );
+              return;
+            }
+
             setError(result.error || 'Sign-in failed.');
+            toast.error(result.error || 'Sign-in failed');
           }
 
           setLoading(false);
@@ -61,10 +78,11 @@ export const useSignIn = () => {
         setError(
           'Unable to connect to the server. Please check your internet connection and try again.'
         );
+        toast.error('Connection error');
         setLoading(false);
       }
     },
-    [clearMessages]
+    [clearMessages, router]
   );
 
   return useMemo(

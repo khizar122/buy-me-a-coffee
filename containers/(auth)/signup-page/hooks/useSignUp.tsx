@@ -1,11 +1,11 @@
-import { registerUser } from '@/actions/auth';
 import { RegisterValidator } from '@/validators';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { signIn } from 'next-auth/react';
 import { useCallback, useMemo, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
+import { registerUser } from '@/actions/auth';
+import { useRouter } from 'next/navigation';
 
 export const useSignUp = () => {
   const defaultValues = useMemo(
@@ -18,6 +18,7 @@ export const useSignUp = () => {
     []
   );
 
+  const router = useRouter();
   const form = useForm<z.infer<typeof RegisterValidator>>({
     resolver: zodResolver(RegisterValidator),
     defaultValues
@@ -50,17 +51,10 @@ export const useSignUp = () => {
           });
 
           if (result.success) {
-            setSuccessMessage(
-              'Registration successful! Redirecting to dashboard...'
-            );
-
-            // Trigger client-side redirection using signIn
-            await signIn('credentials', {
-              email: values?.email,
-              password: values?.password,
-              redirect: true, // Enable redirection
-              callbackUrl: '/dashboard'
-            });
+            setSuccessMessage('Registration successful! Redirecting to verification...');
+            
+            // Redirect to OTP verification page
+            router.push(`/otp?email=${encodeURIComponent(values.email)}`);
           } else {
             setError(result.error || 'Registration failed.');
           }
@@ -75,7 +69,7 @@ export const useSignUp = () => {
         setLoading(false);
       }
     },
-    [clearMessages]
+    [clearMessages, router]
   );
 
   return useMemo(
