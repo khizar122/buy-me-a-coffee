@@ -1,5 +1,5 @@
-// lib/auth.ts
 import { jwtVerify } from 'jose';
+import { cookies } from 'next/headers';
 
 /**
  * Returns the JWT secret key from environment variables
@@ -8,10 +8,18 @@ export function getJwtSecretKey() {
   const secret = process.env.JWT_SECRET;
 
   if (!secret) {
-    throw new Error('JWT_SECRET_KEY is not set in environment variables');
+    throw new Error('JWT_SECRET is not set in environment variables');
   }
 
   return new TextEncoder().encode(secret);
+}
+
+/**
+ * Gets the auth token from cookies
+ */
+export function getAuthToken() {
+  const cookieStore = cookies();
+  return cookieStore.get('auth-token')?.value;
 }
 
 /**
@@ -45,13 +53,19 @@ export async function verifyAuth(token: string) {
 /**
  * Gets the current authenticated user from cookies
  */
-export async function getCurrentUser(token: string | undefined) {
+export async function getCurrentUser(tokenInput?: string) {
+  // If no token is provided as an argument, try to get it from cookies
+  const token = tokenInput || getAuthToken();
+
   if (!token) {
+    console.log('No token provided to getCurrentUser');
     return null;
   }
 
   try {
     const payload = await verifyAuth(token);
+
+    // Return user data from payload
     return {
       id: payload.id as string,
       email: payload.email as string,
@@ -59,6 +73,27 @@ export async function getCurrentUser(token: string | undefined) {
       isCreator: payload.isCreator as boolean
     };
   } catch (error) {
+    console.error('getCurrentUser error:', error);
+    // Don't throw here - return null so calling code can handle
     return null;
+  }
+}
+
+/**
+ * Check if user is authenticated (useful for middleware)
+ * Returns true if authenticated, false otherwise
+ */
+export async function isAuthenticated(
+  token: string | undefined
+): Promise<boolean> {
+  if (!token) {
+    return false;
+  }
+
+  try {
+    await verifyAuth(token);
+    return true;
+  } catch (error) {
+    return false;
   }
 }
