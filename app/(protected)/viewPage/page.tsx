@@ -1,10 +1,11 @@
 'use client';
 
 // app/profile/page.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import CoverPhoto from './coverPhoto';
 import FollowCard from './followCard';
 import ProfileCard from './profileCard';
+import { getUserProfile } from '@/actions/profile';
 
 
 interface ProfileData {
@@ -19,7 +20,35 @@ export default function ProfilePage() {
     bio: 'i am a software engineerr',
     coverImage: null
   });
-  const handleCoverImageChange = (imageUrl: string) => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch user profile data when component mounts
+  useEffect(() => {
+    async function loadProfileData() {
+      try {
+        const data = await getUserProfile();
+        if (data) {
+          // If we get data from the server, update our local state
+          setProfileData((prevData) => ({
+            ...prevData,
+            bio: data.bio || prevData.bio,
+            coverImage: data.coverImage || prevData.coverImage,
+            // Keep username the same if data doesn't have it
+            username: data.username || prevData.username
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadProfileData();
+  }, []);
+
+  const handleCoverImageChange = (imageUrl: string | null) => {
+    console.log('Cover image changed:', imageUrl);
     setProfileData({
       ...profileData,
       coverImage: imageUrl
@@ -44,11 +73,15 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#e5ffff] py-4 sm:py-6 md:py-8">
-      <div className='mb-4'>
-        <CoverPhoto
-          initialImage={profileData.coverImage}
-          onImageChange={handleCoverImageChange}
-        />
+      <div className="mb-4">
+        {isLoading ? (
+          <div className="w-full h-64 bg-gray-200 animate-pulse"></div>
+        ) : (
+          <CoverPhoto
+            initialImage={profileData.coverImage}
+            onImageChange={handleCoverImageChange}
+          />
+        )}
       </div>
       <div className="max-w-5xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">

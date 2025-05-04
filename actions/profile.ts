@@ -30,7 +30,7 @@ const MEDIA_CONFIG = {
  */
 export async function getUserProfile() {
   try {
-    // Get JWT token from cookies - now using 'auth-token'
+    // Get JWT token from cookies
     const token = getAuthToken();
 
     if (!token) {
@@ -68,6 +68,7 @@ export async function getUserProfile() {
       aboutMe: user.aboutMe || '',
       featuredVideoUrl: user.featuredVideoUrl || '',
       profilePictureUrl: user.profilePictureUrl || '/placeholder-profile.jpg',
+      coverImage: user.coverImage || null, // Added coverImage
       supportTerm: user.supportTerm || 'coffee',
       themeColor: user.themeColor || '#ff66ff',
       showSupporterCount: user.showSupporterCount,
@@ -85,7 +86,7 @@ export async function getUserProfile() {
  */
 export async function updateProfile(formData) {
   try {
-    // Get JWT token from cookies - now using 'auth-token'
+    // Get JWT token from cookies
     const token = getAuthToken();
 
     if (!token) {
@@ -113,6 +114,7 @@ export async function updateProfile(formData) {
         aboutMe: formData.aboutMe,
         featuredVideoUrl: formData.featuredVideoUrl || null,
         profilePictureUrl: formData.profilePictureUrl || null,
+        coverImage: formData.coverImage || null, // Added coverImage
         supportTerm: formData.supportTerm || 'coffee',
         themeColor: formData.themeColor || '#ff66ff',
         showSupporterCount: formData.showSupporterCount ?? true,
@@ -197,10 +199,8 @@ async function uploadToCloudinary(file, folder, userId, resourceType) {
  */
 export async function uploadProfileImage(formData) {
   try {
-    // Get JWT token from cookies - now using 'auth-token'
+    // Get JWT token from cookies
     const token = getAuthToken();
-
-    // Debug: Log token value (redacted for security)
     console.log('Token exists:', !!token);
 
     if (!token) {
@@ -211,7 +211,6 @@ export async function uploadProfileImage(formData) {
     let currentUser;
     try {
       currentUser = await getCurrentUser(token);
-      // Debug: Log user info
       console.log('Current user found:', !!currentUser);
     } catch (authError) {
       console.error('Authentication error:', authError);
@@ -279,11 +278,94 @@ export async function uploadProfileImage(formData) {
 }
 
 /**
+ * Uploads a cover image
+ */
+export async function uploadCoverImage(formData) {
+  try {
+    // Get JWT token from cookies
+    const token = getAuthToken();
+    console.log('Token exists:', !!token);
+
+    if (!token) {
+      return { error: 'Authentication required. Please log in again.' };
+    }
+
+    // Get current user from token
+    let currentUser;
+    try {
+      currentUser = await getCurrentUser(token);
+      console.log('Current user found:', !!currentUser);
+    } catch (authError) {
+      console.error('Authentication error:', authError);
+      return { error: 'Invalid authentication. Please log in again.' };
+    }
+
+    if (!currentUser) {
+      return { error: 'You must be logged in to upload an image' };
+    }
+
+    // Get the file from form data
+    const file = formData.get('file');
+
+    if (!file) {
+      return { error: 'No file provided' };
+    }
+
+    // Validate file size
+    if (file.size > MEDIA_CONFIG.MAX_SIZE.image) {
+      return {
+        error: `File too large. Maximum size is ${Math.round(MEDIA_CONFIG.MAX_SIZE.image / (1024 * 1024))}MB.`
+      };
+    }
+
+    // Validate file type
+    if (!MEDIA_CONFIG.ALLOWED_TYPES.image.includes(file.type)) {
+      return {
+        error: `Invalid file type. Supported formats: ${MEDIA_CONFIG.ALLOWED_TYPES.image
+          .map((type) => type.split('/')[1].toUpperCase())
+          .join(', ')}.`
+      };
+    }
+
+    // Upload to Cloudinary
+    const uploadResult = await uploadToCloudinary(
+      file,
+      'cover-images',
+      currentUser.id,
+      'image'
+    );
+
+    if (!uploadResult.success || !uploadResult.url) {
+      return { error: uploadResult.error || 'Failed to upload image' };
+    }
+
+    // Update user in database
+    try {
+      await prisma.user.update({
+        where: { id: BigInt(currentUser.id) },
+        data: { coverImage: uploadResult.url }
+      });
+    } catch (dbError) {
+      console.error('Database update error:', dbError);
+      return { error: 'Failed to update profile with new cover image' };
+    }
+
+    // Revalidate profile page
+    revalidatePath(`/${currentUser.username}`);
+
+    return { success: true, imageUrl: uploadResult.url };
+  } catch (error) {
+    console.error('Cover image upload error:', error);
+    return { error: 'Failed to upload cover image. Please try again.' };
+  }
+}
+
+/**
  * Uploads a featured video
  */
 export async function uploadFeaturedVideo(formData) {
   try {
-    // Get JWT token from cookies - now using 'auth-token'
+    // Get JWT token from cookies
     const token = getAuthToken();
 
     if (!token) {

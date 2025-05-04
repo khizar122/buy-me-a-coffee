@@ -16,6 +16,7 @@ model User {
   displayName         String
   creatorTagline      String?
   bio                 String?
+  coverImage          String?  
   aboutMe             String?
   profilePictureUrl   String?
   featuredVideoUrl    String?
