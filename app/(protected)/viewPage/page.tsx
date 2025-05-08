@@ -1,11 +1,11 @@
 'use client';
 
 // app/profile/page.tsx
-import { useState, useEffect } from 'react';
+import { getUserProfile } from '@/actions/profile';
+import { useEffect, useState } from 'react';
 import CoverPhoto from './coverPhoto';
 import FollowCard from './followCard';
 import ProfileCard from './profileCard';
-import { getUserProfile } from '@/actions/profile';
 
 
 interface ProfileData {
@@ -72,7 +72,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#e5ffff] py-4 sm:py-6 md:py-8">
+    <div className="min-h-screen  bg-profile-bg py-4 sm:py-6 md:py-8">
       <div className="mb-4">
         {isLoading ? (
           <div className="w-full h-64 bg-gray-200 animate-pulse"></div>

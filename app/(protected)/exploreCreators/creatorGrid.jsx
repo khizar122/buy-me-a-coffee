@@ -8,6 +8,7 @@ const CreatorsGrid = ({ creators }) => {
       {creators.map((creator, index) => (
         <CreatorCard
           key={creator.id}
+          id={creator.id} // This line was missing! Pass the ID to the CreatorCard
           rank={index + 1}
           avatar={creator.avatar}
           name={creator.name}
@@ -20,3 +21,4 @@ const CreatorsGrid = ({ creators }) => {
 };
 
 export default CreatorsGrid;
+ 

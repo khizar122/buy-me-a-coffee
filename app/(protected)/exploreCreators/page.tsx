@@ -1,49 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import CreatorsGrid from './creatorGrid';
+import FollowingGrid from './followingGrid';
 import NavigationTabs from './navigationTabs';
 import PublishedCard from './PublishedCard';
 import SearchBar from './searchBar';
 import SectionHeading from './SectionHeading';
-import FollowingGrid from './followingGrid';
+import { getAllUsers } from '@/actions/user'; // Update path to match your project structure
 
-
-// Mock data for creators
-const trendingCreators = [
-  {
-    id: 1,
-    avatar:
-      'https://as1.ftcdn.net/v2/jpg/01/73/77/00/1000_F_173770068_LRQyNUZQn9WtQyJoJsOEwK8qwBzypBm0.jpg',
-    name: 'Simple Politics',
-    description: 'Helping people have better conversations about politics',
-    supporters: 6182
-  },
-  {
-    id: 2,
-    avatar:
-      'https://as1.ftcdn.net/v2/jpg/01/73/77/00/1000_F_173770068_LRQyNUZQn9WtQyJoJsOEwK8qwBzypBm0.jpg',
-    name: 'Cara',
-    description: 'building a new platform for artists',
-    supporters: 6182
-  },
-  {
-    id: 3,
-    avatar:
-      'https://as1.ftcdn.net/v2/jpg/01/73/77/00/1000_F_173770068_LRQyNUZQn9WtQyJoJsOEwK8qwBzypBm0.jpg',
-    name: 'Beach Talk Radio',
-    description: 'A Dinky Little Podcast',
-    supporters: 1609
-  },
-  {
-    id: 4,
-    avatar:
-      'https://as1.ftcdn.net/v2/jpg/01/73/77/00/1000_F_173770068_LRQyNUZQn9WtQyJoJsOEwK8qwBzypBm0.jpg',
-    name: 'Tanaka san',
-    description: 'teaching Japanese on YouTube & Instagram',
-    supporters: 512
-  }
-];
+// Types for our user data
+interface Creator {
+  id: string;
+  avatar: string;
+  name: string;
+  description: string;
+  supporters: number;
+}
 
 // Mock data for following creators - with Instagram-style posts
 const followingCreators = [
@@ -73,25 +47,25 @@ const followingCreators = [
   }
 ];
 
-// Mock data for published posts
+// Mock data for published posts with local images
 const publishedPosts = {
   author: {
     name: 'The Tech Prepper',
-    avatarUrl: '/api/placeholder/40/40' // Replace with actual avatar image
+    avatarUrl: '/images/placeholder-avatar.png' // Local placeholder image
   },
   posts: [
     {
       id: '1',
       title: 'The Ultimate Manpack',
       date: 'Sep 8, 2022',
-      imageUrl: '/api/placeholder/400/320', // This would be replaced with the tactical gear image
+      imageUrl: '/images/placeholder-post.jpg', // Local placeholder image
       link: '#'
     },
     {
       id: '2',
       title: '30K Subscriber Winners',
       date: 'Mar 5, 2023',
-      imageUrl: '/api/placeholder/400/320', // This would be replaced with the terminal/console image
+      imageUrl: '/images/placeholder-post.jpg', // Local placeholder image
       link: '#'
     }
   ]
@@ -99,9 +73,58 @@ const publishedPosts = {
 
 export default function TrendingCreatorsPage() {
   const [activeTab, setActiveTab] = useState('explore');
-  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [trendingCreators, setTrendingCreators] = useState<Creator[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch creators when the component mounts or search term changes
+  useEffect(() => {
+    async function fetchCreators() {
+      setLoading(true);
+      try {
+        // Call the server action to get users
+        const response = await getAllUsers({
+          isCreator: true,
+          searchTerm: searchTerm,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+          limit: 8 // Limit to 8 trending creators
+        });
+
+        if (response.success) {
+          // Format users to match the structure expected by CreatorsGrid
+          const formattedUsers = response.users.map((user) => ({
+            id: user.id,
+            // Use local placeholder image as fallback
+            avatar: user.profilePictureUrl || '/images/placeholder-avatar.png',
+            name: user.displayName || user.username,
+            description: user.creatorTagline || 'Creator',
+            supporters: user.followersCount || 0
+          }));
+
+          setTrendingCreators(formattedUsers);
+          setError(null);
+        } else {
+          setError(response.error || 'Failed to load creators');
+        }
+      } catch (err) {
+        setError('Failed to load creators. Please try again later.');
+        console.error('Error fetching creators:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchCreators();
+  }, [searchTerm]); // Re-fetch when search term changes
+
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
+  };
+
+  const handleSearch = (term) => {
+    setSearchTerm(term);
   };
 
   const handleFollow = () => {
@@ -109,26 +132,36 @@ export default function TrendingCreatorsPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#e5ffff' }}>
+    <div className="min-h-screen bg-profile-bg">
       <div className="container max-w-4xl mx-auto px-4 py-6">
         <NavigationTabs activeTab={activeTab} onTabChange={handleTabChange} />
-        
-        <SearchBar />
-        
+
+        <SearchBar onSearch={handleSearch} />
+
         {activeTab === 'explore' ? (
           <>
             <SectionHeading title="Trending creators this week" />
             <div className="bg-white rounded-lg shadow p-4 mb-6">
-              <CreatorsGrid creators={trendingCreators} />
+              {loading ? (
+                <div className="flex justify-center items-center h-40">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+                </div>
+              ) : error ? (
+                <div className="text-center text-red-500 py-4">{error}</div>
+              ) : trendingCreators.length === 0 ? (
+                <div className="text-center py-4">No creators found</div>
+              ) : (
+                <CreatorsGrid creators={trendingCreators} />
+              )}
             </div>
-            
+
             {/* Published Now section */}
             <div className="mb-6">
               <div className="flex items-center mb-4">
                 <h2 className="text-xl font-bold">Published now</h2>
                 <span className="ml-2 w-3 h-3 bg-orange-500 rounded-full"></span>
               </div>
-              <PublishedCard 
+              <PublishedCard
                 author={publishedPosts.author}
                 posts={publishedPosts.posts}
                 onFollow={handleFollow}
