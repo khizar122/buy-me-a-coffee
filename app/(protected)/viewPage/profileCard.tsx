@@ -3,17 +3,20 @@
 import React, { useState } from 'react';
 import EditProfileDialog from './editProfilemodal';
 
-
 interface ProfileCardProps {
   username: string;
   bio: string;
   profileImage?: string;
+  onEdit?: () => void;
+  isEditable?: boolean; // New prop to determine if the profile is editable
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
   username,
   bio,
-  profileImage = '/placeholder-profile.jpg'
+  profileImage = '/placeholder-profile.jpg',
+  onEdit,
+  isEditable = false // Default to false (not editable)
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [userData, setUserData] = useState({
@@ -34,12 +37,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       <div className="bg-white rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-medium">About {userData.username}</h2>
-          <button
-            onClick={() => setIsDialogOpen(true)}
-            className="text-blue-500 hover:text-blue-700 text-sm font-medium"
-          >
-            Edit
-          </button>
+          {isEditable && ( // Only show edit button if the profile is editable
+            <button
+              onClick={() => setIsDialogOpen(true)}
+              className="text-blue-500 hover:text-blue-700 text-sm font-medium"
+            >
+              Edit
+            </button>
+          )}
         </div>
         <p className="text-gray-600 mb-4">{userData.bio}</p>
         <div>
@@ -84,14 +89,16 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         </div>
       </div>
 
-      <EditProfileDialog
-        isOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        username={userData.username}
-        bio={userData.bio}
-        profileImage={profileImage}
-        onSave={handleSaveProfile}
-      />
+      {isEditable && ( // Only render dialog if profile is editable
+        <EditProfileDialog
+          isOpen={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          username={userData.username}
+          bio={userData.bio}
+          profileImage={profileImage}
+          onSave={handleSaveProfile}
+        />
+      )}
     </>
   );
 };

@@ -63,12 +63,14 @@ export async function getUserProfile() {
 
     // Return formatted profile data
     return {
+      id: currentUser.id.toString(),
+      username: user.username,
       fullName: user.displayName || user.username,
       bio: user.creatorTagline || '',
       aboutMe: user.aboutMe || '',
       featuredVideoUrl: user.featuredVideoUrl || '',
       profilePictureUrl: user.profilePictureUrl || '/placeholder-profile.jpg',
-      coverImage: user.coverImage || null, // Added coverImage
+      coverImage: user.coverImage || null,
       supportTerm: user.supportTerm || 'coffee',
       themeColor: user.themeColor || '#ff66ff',
       showSupporterCount: user.showSupporterCount,
@@ -78,6 +80,85 @@ export async function getUserProfile() {
   } catch (error) {
     console.error('Error fetching user profile:', error);
     return null;
+  }
+}
+
+/**
+ * Gets a user profile by ID
+ * @param {string} userId - The ID of the user to fetch
+ * @returns {Promise<object|null>} The user profile data or null if not found
+ */
+export async function getUserById(userId) {
+  try {
+    // Check if userId is provided
+    if (!userId) {
+      console.log('No user ID provided');
+      return null;
+    }
+
+    // Find user in database
+    const user = await prisma.user.findUnique({
+      where: { id: BigInt(userId) }
+    });
+
+    if (!user) {
+      console.log(`User not found with ID: ${userId}`);
+      return null;
+    }
+
+    // Parse the social links from JSON
+    const socialLinks = user.socialLinks
+      ? JSON.parse(user.socialLinks as string)
+      : [];
+
+    // Return formatted profile data
+    return {
+      id: user.id.toString(),
+      username: user.username,
+      fullName: user.displayName || user.username,
+      bio: user.creatorTagline || '',
+      aboutMe: user.aboutMe || '',
+      featuredVideoUrl: user.featuredVideoUrl || '',
+      profilePictureUrl: user.profilePictureUrl || '/placeholder-profile.jpg',
+      coverImage: user.coverImage || null,
+      supportTerm: user.supportTerm || 'coffee',
+      themeColor: user.themeColor || '#ff66ff',
+      showSupporterCount: user.showSupporterCount,
+      socialShareHandle: user.socialShareHandle || '',
+      socialLinks
+    };
+  } catch (error) {
+    console.error('Error fetching user by ID:', error);
+    return null;
+  }
+}
+
+/**
+ * Checks if the current logged-in user is viewing their own profile
+ * @param {string} profileUserId - The ID of the profile being viewed
+ * @returns {Promise<boolean>} True if the current user is viewing their own profile
+ */
+export async function isCurrentUserProfile(profileUserId) {
+  try {
+    // Get JWT token from cookies
+    const token = getAuthToken();
+
+    if (!token) {
+      return false;
+    }
+
+    // Get current user from token
+    const currentUser = await getCurrentUser(token);
+
+    if (!currentUser) {
+      return false;
+    }
+
+    // Compare IDs
+    return currentUser.id === profileUserId;
+  } catch (error) {
+    console.error('Error checking current user:', error);
+    return false;
   }
 }
 
@@ -114,7 +195,7 @@ export async function updateProfile(formData) {
         aboutMe: formData.aboutMe,
         featuredVideoUrl: formData.featuredVideoUrl || null,
         profilePictureUrl: formData.profilePictureUrl || null,
-        coverImage: formData.coverImage || null, // Added coverImage
+        coverImage: formData.coverImage || null,
         supportTerm: formData.supportTerm || 'coffee',
         themeColor: formData.themeColor || '#ff66ff',
         showSupporterCount: formData.showSupporterCount ?? true,
@@ -127,6 +208,7 @@ export async function updateProfile(formData) {
 
     // Revalidate profile page
     revalidatePath(`/${currentUser.username}`);
+    revalidatePath(`/profile/${currentUser.id}`); // Added to revalidate new profile URL
 
     return { success: true };
   } catch (error) {
@@ -267,8 +349,9 @@ export async function uploadProfileImage(formData) {
       return { error: 'Failed to update profile with new image' };
     }
 
-    // Revalidate profile page
+    // Revalidate profile pages
     revalidatePath(`/${currentUser.username}`);
+    revalidatePath(`/profile/${currentUser.id}`); // Added to revalidate new profile URL
 
     return { success: true, imageUrl: uploadResult.url };
   } catch (error) {
@@ -350,8 +433,9 @@ export async function uploadCoverImage(formData) {
       return { error: 'Failed to update profile with new cover image' };
     }
 
-    // Revalidate profile page
+    // Revalidate profile pages
     revalidatePath(`/${currentUser.username}`);
+    revalidatePath(`/profile/${currentUser.id}`); // Added to revalidate new profile URL
 
     return { success: true, imageUrl: uploadResult.url };
   } catch (error) {
@@ -431,8 +515,9 @@ export async function uploadFeaturedVideo(formData) {
       return { error: 'Failed to update profile with new video' };
     }
 
-    // Revalidate profile page
+    // Revalidate profile pages
     revalidatePath(`/${currentUser.username}`);
+    revalidatePath(`/profile/${currentUser.id}`); // Added to revalidate new profile URL
 
     return { success: true, videoUrl: uploadResult.url };
   } catch (error) {
