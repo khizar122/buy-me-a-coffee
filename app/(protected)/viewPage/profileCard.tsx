@@ -34,7 +34,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
 
   return (
     <>
-      <div className="bg-white rounded-lg p-6">
+      <div className="bg-white rounded-lg p-6 shadow-md">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-medium">About {userData.username}</h2>
           {isEditable && ( // Only show edit button if the profile is editable

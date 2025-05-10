@@ -186,7 +186,7 @@ const CoverPhoto: React.FC<CoverPhotoProps> = ({
 
       <div
         ref={imageContainerRef}
-        className="w-full h-64 bg-gray-100 relative overflow-hidden transition-all duration-300"
+        className="w-full h-80 bg-gray-100 relative overflow-hidden transition-all duration-300"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

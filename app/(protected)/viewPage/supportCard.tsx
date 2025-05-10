@@ -28,7 +28,7 @@ const SupportCard: React.FC<SupportCardProps> = ({
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm">
+    <div className="bg-white p-6 rounded-xl shadow-md">
       <div className="flex flex-col">
         <h2 className="text-2xl font-bold mb-4">
           Buy <span className="text-gray-800">{username}</span> a slice of cake
