@@ -28,6 +28,7 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  console.log("data",profileData)
 
   // Fetch user profile data when component mounts
   useEffect(() => {
@@ -57,7 +58,9 @@ export default function ProfilePage() {
             fullName: data.fullName,
             aboutMe: data.aboutMe,
             coverImage: data.coverImage,
-            username: data.username
+            username: data.username,
+            supportTerm: data.supportTerm,
+            profileImage:data.profilePictureUrl
           });
         }
       } catch (error) {
@@ -147,6 +150,7 @@ export default function ProfilePage() {
               {!isOwnProfile && (
                 <SupportCard
                   username={profileData.fullName}
+                  supportTerm={profileData.supportTerm}
                   onSupport={(name, message, amount, isRecurring) => {
                     // Handle payment logic here
                     console.log(name, message, amount, isRecurring);

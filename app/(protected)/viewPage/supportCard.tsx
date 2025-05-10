@@ -1,10 +1,11 @@
 'use client';
 
 // components/SupportCard.tsx
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface SupportCardProps {
   username: string;
+  supportTerm: string;
   onSupport?: (
     name: string,
     message: string,
@@ -15,12 +16,34 @@ interface SupportCardProps {
 
 const SupportCard: React.FC<SupportCardProps> = ({
   username,
+  supportTerm = '☕ coffee', // Default value if none provided
   onSupport = () => {}
 }) => {
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const [amount, setAmount] = useState(5); // Default to 5
   const [isRecurring, setIsRecurring] = useState(false);
+
+  // Extract emoji and text from supportTerm
+  const [supportEmoji, setSupportEmoji] = useState('☕');
+  const [supportText, setSupportText] = useState('coffee');
+
+  useEffect(() => {
+    if (supportTerm) {
+      // Check if the first character is an emoji
+      const firstChar = supportTerm.charAt(0);
+      const match = supportTerm.match(/(\p{Emoji})\s?(.*)/u);
+
+      if (match) {
+        // We found an emoji and possibly text
+        setSupportEmoji(match[1]);
+        setSupportText(match[2] || 'coffee'); // Default to coffee if no text
+      } else {
+        // No emoji found, just use the whole string as text
+        setSupportText(supportTerm);
+      }
+    }
+  }, [supportTerm]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -31,29 +54,15 @@ const SupportCard: React.FC<SupportCardProps> = ({
     <div className="bg-white p-6 rounded-xl shadow-md">
       <div className="flex flex-col">
         <h2 className="text-2xl font-bold mb-4">
-          Buy <span className="text-gray-800">{username}</span> a slice of cake
+          Buy <span className="text-gray-800">{username}</span> a {supportText}
         </h2>
 
         <div className="bg-pink-50 p-4 rounded-xl mb-4">
           <div className="flex items-center">
-            {/* Coffee Icon */}
+            {/* Support Emoji */}
             <div className="flex-shrink-0 mr-2">
-              <div className="w-10 h-10 relative">
-                <img
-                  src="/coffee-cup.svg"
-                  alt="Coffee cup"
-                  className="w-10 h-10"
-                  onError={(e) => {
-                    // Fallback if image fails to load
-                    e.currentTarget.parentElement.innerHTML = `
-                      <svg viewBox="0 0 24 24" width="40" height="40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M18 8h1a4 4 0 0 1 0 8h-1" stroke="#8B5E3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" fill="#D7B9A3" stroke="#8B5E3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M6 1v3M10 1v3M14 1v3" stroke="#8B5E3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    `;
-                  }}
-                />
+              <div className="w-10 h-10 relative flex items-center justify-center text-2xl">
+                {supportEmoji}
               </div>
             </div>
             <div className="text-xl font-bold mr-2">×</div>

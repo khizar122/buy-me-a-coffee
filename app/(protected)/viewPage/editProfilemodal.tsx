@@ -62,6 +62,13 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
     { name: 'Plum Passion', color: '#9933ff' },
     { name: 'Crimson Sunset', color: '#ff4433' }
   ];
+  const presetButtons = [
+    { emoji: '☕', text: 'Coffee' },
+    { emoji: '🍺', text: 'Beer' },
+    { emoji: '🍕', text: 'Pizza' },
+    { emoji: '📖', text: 'Book' }
+  ];
+  
 
   // Fetch user profile data when dialog opens
   useEffect(() => {
@@ -70,39 +77,59 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
     }
   }, [isOpen]);
 
-const fetchUserProfile = async () => {
-  try {
-    setLoading(true);
-    const userData = await getUserProfile();
+  const fetchUserProfile = async () => {
+    try {
+      setLoading(true);
+      const userData = await getUserProfile();
 
-    if (userData) {
-      setFullName(userData.fullName || username);
-      setBioText(userData.bio || bio);
-      setAboutMeText(userData.aboutMe || '');
-      setCurrentProfileImage(userData.profilePictureUrl || profileImage);
-      setFeaturedVideoUrl(userData.featuredVideoUrl || '');
-      setCoffeeText(userData.supportTerm || 'coffee');
-      setSelectedThemeColor(
-        userData.themeColor
-          ? getThemeColorName(userData.themeColor)
-          : 'Cotton Candy'
-      );
-      setSelectedThemeColorCode(userData.themeColor || '#ff66ff');
-      setDisplaySupporterCount(userData.showSupporterCount);
-      setSocialShareHandle(userData.socialShareHandle || username);
-      setSocialLinks(
-        userData.socialLinks && userData.socialLinks.length > 0
-          ? userData.socialLinks
-          : ['']
-      );
+      if (userData) {
+        setFullName(userData.fullName || username);
+        setBioText(userData.bio || bio);
+        setAboutMeText(userData.aboutMe || '');
+        setCurrentProfileImage(userData.profilePictureUrl || profileImage);
+        setFeaturedVideoUrl(userData.featuredVideoUrl || '');
+
+        // Handle supportTerm - extract emoji and text
+        if (userData.supportTerm) {
+          // Check if the first character is an emoji
+          const firstChar = userData.supportTerm.charAt(0);
+          const isEmoji = /\p{Emoji}/u.test(firstChar);
+
+          if (isEmoji) {
+            // Extract the emoji and the rest of the text
+            setSelectedEmoji(firstChar);
+            setCoffeeText(userData.supportTerm.slice(1).trim());
+          } else {
+            // No emoji found, just set the text
+            setCoffeeText(userData.supportTerm);
+          }
+        } else {
+          // Default values
+          setSelectedEmoji('☕');
+          setCoffeeText('coffee');
+        }
+
+        setSelectedThemeColor(
+          userData.themeColor
+            ? getThemeColorName(userData.themeColor)
+            : 'Cotton Candy'
+        );
+        setSelectedThemeColorCode(userData.themeColor || '#ff66ff');
+        setDisplaySupporterCount(userData.showSupporterCount);
+        setSocialShareHandle(userData.socialShareHandle || username);
+        setSocialLinks(
+          userData.socialLinks && userData.socialLinks.length > 0
+            ? userData.socialLinks
+            : ['']
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast.error('Failed to load profile data');
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error('Error fetching profile:', error);
-    toast.error('Failed to load profile data');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
   const getThemeColorName = (colorCode: string) => {
     const color = themeColors.find((c) => c.color === colorCode);
     return color ? color.name : 'Cotton Candy';
@@ -292,7 +319,7 @@ const handleProfileImageChange = async (
         aboutMe: aboutMeText,
         featuredVideoUrl,
         profilePictureUrl: currentProfileImage,
-        supportTerm: coffeeText,
+        supportTerm: `${selectedEmoji} ${coffeeText}`.trim(), // Combine emoji and text
         themeColor: selectedThemeColorCode,
         showSupporterCount: displaySupporterCount,
         socialShareHandle,
@@ -851,62 +878,27 @@ const handleProfileImageChange = async (
               />
             </div>
             <div className="flex flex-wrap mt-3 gap-2">
-              <button
-                className="flex items-center bg-gray-100 rounded-md px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm"
-                onClick={() => {
-                  setSelectedEmoji('☕');
-                  setCoffeeText('Coffee');
-                }}
-                type="button"
-                disabled={loading}
-              >
-                <span role="img" aria-label="coffee" className="mr-1 sm:mr-2">
-                  ☕
-                </span>
-                Coffee
-              </button>
-              <button
-                className="flex items-center bg-gray-100 rounded-md px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm"
-                onClick={() => {
-                  setSelectedEmoji('🍺');
-                  setCoffeeText('Beer');
-                }}
-                type="button"
-                disabled={loading}
-              >
-                <span role="img" aria-label="beer" className="mr-1 sm:mr-2">
-                  🍺
-                </span>
-                Beer
-              </button>
-              <button
-                className="flex items-center bg-gray-100 rounded-md px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm"
-                onClick={() => {
-                  setSelectedEmoji('🍕');
-                  setCoffeeText('Pizza');
-                }}
-                type="button"
-                disabled={loading}
-              >
-                <span role="img" aria-label="pizza" className="mr-1 sm:mr-2">
-                  🍕
-                </span>
-                Pizza
-              </button>
-              <button
-                className="flex items-center bg-gray-100 rounded-md px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm"
-                onClick={() => {
-                  setSelectedEmoji('📖');
-                  setCoffeeText('Book');
-                }}
-                type="button"
-                disabled={loading}
-              >
-                <span role="img" aria-label="book" className="mr-1 sm:mr-2">
-                  📖
-                </span>
-                Book
-              </button>
+              {presetButtons.map((preset) => (
+                <button
+                  key={preset.text}
+                  className="flex items-center bg-gray-100 rounded-md px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm"
+                  onClick={() => {
+                    setSelectedEmoji(preset.emoji);
+                    setCoffeeText(preset.text);
+                  }}
+                  type="button"
+                  disabled={loading}
+                >
+                  <span
+                    role="img"
+                    aria-label={preset.text.toLowerCase()}
+                    className="mr-1 sm:mr-2"
+                  >
+                    {preset.emoji}
+                  </span>
+                  {preset.text}
+                </button>
+              ))}
             </div>
           </div>
 
