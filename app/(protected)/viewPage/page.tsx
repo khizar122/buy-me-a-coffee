@@ -18,6 +18,8 @@ interface ProfileData {
   aboutMe: string;
   coverImage: string | null;
   username?: string;
+  supportTerm?: string;
+  profileImage?: string;
 }
 
 export default function ProfilePage() {
@@ -28,7 +30,7 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
-  console.log("data",profileData)
+  console.log('data', profileData);
 
   // Fetch user profile data when component mounts
   useEffect(() => {
@@ -53,15 +55,31 @@ export default function ProfilePage() {
 
         if (data) {
           // Set the actual data from the database
-          setProfileData({
+          const profileInfo = {
             id: data.id,
             fullName: data.fullName,
             aboutMe: data.aboutMe,
             coverImage: data.coverImage,
             username: data.username,
             supportTerm: data.supportTerm,
-            profileImage:data.profilePictureUrl
-          });
+            profileImage: data.profilePictureUrl
+          };
+
+          setProfileData(profileInfo);
+
+          // Store the viewed profile info in localStorage for the navbar
+          if (!isOwnProfile) {
+            localStorage.setItem(
+              'viewedProfile',
+              JSON.stringify({
+                fullName: data.fullName,
+                profileImage: data.profilePictureUrl
+              })
+            );
+          } else {
+            // If it's own profile, clear the viewed profile
+            localStorage.removeItem('viewedProfile');
+          }
         }
       } catch (error) {
         console.error('Error loading profile:', error);
@@ -71,6 +89,11 @@ export default function ProfilePage() {
     }
 
     loadProfileData();
+
+    // Clear viewedProfile from localStorage when component unmounts
+    return () => {
+      localStorage.removeItem('viewedProfile');
+    };
   }, [userId]);
 
   const handleCoverImageChange = (imageUrl: string | null) => {
