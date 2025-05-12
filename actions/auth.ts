@@ -20,8 +20,6 @@ function generateOTP() {
 // Helper function to send OTP email using Resend
 async function sendVerificationEmail(email, otp, username) {
   try {
-    console.log('tes', email);
-    // Ensure username is a string
     const safeUsername = username?.toString() || 'User';
 
     const { data, error } = await resend.emails.send({
@@ -79,11 +77,15 @@ const ResendOTPSchema = z.object({
   email: z.string().email()
 });
 
-export async function registerUser(userData) {
+export async function registerUser(userData: any) {
   try {
+    if (!userData) {
+      throw new Error('User data is missing.');
+    }
+
     // Validate input data
     const validatedData = RegisterSchema.safeParse(userData);
-
+    console.log('validatedData', validatedData);
     if (!validatedData.success) {
       return {
         success: false,
@@ -94,27 +96,22 @@ export async function registerUser(userData) {
 
     const data = validatedData.data;
 
-    // Check if user already exists with the same email
-    const existingUserByEmail = await prisma.user.findUnique({
-      where: { email: data.email }
+    // Check if user already exists by email or username
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: data.email }, { username: data.username }]
+      }
     });
 
-    if (existingUserByEmail) {
+    if (existingUser) {
+      const errorMessage =
+        existingUser.email === data.email
+          ? 'User with this email already exists'
+          : 'Username already taken';
+
       return {
         success: false,
-        error: 'User with this email already exists'
-      };
-    }
-
-    // Check if username is already taken
-    const existingUserByUsername = await prisma.user.findUnique({
-      where: { username: data.username }
-    });
-
-    if (existingUserByUsername) {
-      return {
-        success: false,
-        error: 'Username already taken'
+        error: errorMessage
       };
     }
 
@@ -123,23 +120,18 @@ export async function registerUser(userData) {
 
     // Generate OTP for email verification
     const otp = generateOTP();
-    // Set OTP expiry (15 minutes from now)
     const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+    const db = {
+      username: data.username ?? '',
+      email: data.email ?? '',
+      passwordHash: hashedPassword ?? '',
+      displayName: data.displayName ?? ''
+    };
 
-    // Create the user with verification data
-    const newUser = await prisma.user.create({
-      data: {
-        username: data.username,
-        email: data.email,
-        passwordHash: hashedPassword,
-        displayName: data.displayName,
-        isCreator: data.isCreator,
-        isVerified: false,
-        verificationCode: otp,
-        verificationExpiry: otpExpiry,
-        // Initialize empty JSON for socialLinks
-        socialLinks: {}
-      }
+    console.log('here', db);
+
+    await prisma.user.create({
+      data: db
     });
 
     // Send verification email
@@ -151,10 +143,9 @@ export async function registerUser(userData) {
 
     if (!emailResult.success) {
       console.error('Failed to send verification email:', emailResult.error);
-      // We still return success since the user was created, but log the email failure
     }
 
-    // Store email in cookies for verification flow - use await with cookies()
+    // Store email in cookies for verification flow
     const cookieStore = cookies();
     await cookieStore.set({
       name: 'pending-verification-email',
@@ -165,17 +156,16 @@ export async function registerUser(userData) {
       sameSite: 'strict'
     });
 
-    // Return success without sensitive information
     return {
       success: true,
-      message: 'Please check your email for verification code',
+      message: 'Please check your email for the verification code.',
       email: data.email
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Registration error:', error);
     return {
       success: false,
-      error: 'An error occurred during registration'
+      error: error.message || 'An error occurred during registration.'
     };
   }
 }
