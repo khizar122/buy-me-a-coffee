@@ -3,12 +3,13 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --turbo",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "migration": "node ./prisma/migration.js",
     "prisma:format": "npx prisma format",
     "seed": "node ./prisma/seed.js",
-    "prisma:seed": "node ./prisma/seed.js"
+    "prisma:seed": "node ./prisma/seed.js",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

@@ -52,20 +52,8 @@ export const useSignIn = () => {
               'Sign-in successful. Redirecting to dashboard...'
             );
             toast.success('Sign-in successful');
-
-            // Redirect to dashboard
             router.push('/dashboard');
           } else {
-            // Special case for unverified users
-            if (result.needsVerification) {
-              toast.info('Email verification required');
-              // Redirect to verify OTP page
-              router.push(
-                `/verify-otp?email=${encodeURIComponent(result.email)}&from=login`
-              );
-              return;
-            }
-
             setError(result.error || 'Sign-in failed.');
             toast.error(result.error || 'Sign-in failed');
           }
