@@ -101,8 +101,8 @@ const Dashboard: React.FC = () => {
 
   return (
     <div
-      className="flex flex-col border-gray-400 rounded-lg"
-      style={{ backgroundColor: '#e5ffff' }}
+      className="flex flex-col border-gray-400 rounded-lg bg-profile-bg"
+      // style={{ backgroundColor: '' }}
     >
       {/* Main content */}
       <div className="flex flex-1">

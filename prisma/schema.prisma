@@ -16,6 +16,7 @@ model User {
   displayName         String
   creatorTagline      String?
   bio                 String?
+  coverImage          String?  
   aboutMe             String?
   profilePictureUrl   String?
   featuredVideoUrl    String?
@@ -26,7 +27,11 @@ model User {
   socialLinks         Json?
   isCreator           Boolean     @default(false)
   createdAt           DateTime    @default(now())
+  isVerified          Boolean     @default(false)     // New field for email verification
+  verificationCode    String?                         // Store OTP for verification
+  verificationExpiry  DateTime?                       // OTP expiry timestamp
 
+  // Keep your existing relations
   wallet              Wallet?
   paymentMethods      PaymentMethod[]
   paymentsMade        Payment[]   @relation("PaymentsMade")

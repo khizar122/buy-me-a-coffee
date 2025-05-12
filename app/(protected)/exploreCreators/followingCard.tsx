@@ -1,14 +1,17 @@
 'use client';
 
 import { Heart, MessageCircle, Share2 } from 'lucide-react';
+import Test from '../../../public/placeholder.svg';
+import Image from 'next/image';
 
 const FollowingCard = ({ creator }) => {
+  console.log("here",creator)
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden mb-4">
       {/* Creator Header */}
       <div className="p-4 flex items-center">
-        <img
-          src="/api/placeholder/40/40"
+        <Image
+          src={creator.avatar || '/api/placeholder/40/40'}
           alt={creator.name}
           className="w-10 h-10 rounded-full object-cover mr-3"
         />
@@ -20,11 +23,11 @@ const FollowingCard = ({ creator }) => {
         </div>
       </div>
 
-      {/* Main Content - Coffee Support Image */}
+      {/* Main Content - Post Image */}
       <div className="w-full">
-        <img
-          src="/api/placeholder/600/320"
-          alt="Buy me a coffee support card"
+        <Image
+          src={creator.imageUrl || Test}
+          alt={creator.title || 'Post image'}
           className="w-full h-auto"
         />
       </div>

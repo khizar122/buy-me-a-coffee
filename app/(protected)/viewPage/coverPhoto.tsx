@@ -1,24 +1,36 @@
 'use client';
 
-// components/CoverPhoto.tsx
+import { uploadCoverImage } from '@/actions/profile';
 import React, { useEffect, useRef, useState } from 'react';
 
 interface CoverPhotoProps {
   initialImage?: string | null;
   onImageChange?: (imageUrl: string | null) => void;
+  editable?: boolean; // New prop to determine if the cover photo is editable
 }
 
 const CoverPhoto: React.FC<CoverPhotoProps> = ({
   initialImage = null,
-  onImageChange
+  onImageChange,
+  editable = true // Default to true for backward compatibility
 }) => {
   const [coverImage, setCoverImage] = useState<string | null>(initialImage);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  // Update coverImage when initialImage changes (e.g., after page refresh)
+  useEffect(() => {
+    if (initialImage !== coverImage) {
+      setCoverImage(initialImage);
+    }
+  }, [initialImage]);
+
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [tempImage, setTempImage] = useState<string | null>(null);
   const [tempPosition, setTempPosition] = useState({ x: 0, y: 0 });
+  const [isUploading, setIsUploading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
@@ -40,9 +52,13 @@ const CoverPhoto: React.FC<CoverPhotoProps> = ({
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only proceed if editable
+    if (!editable) return;
+
     const file = e.target.files?.[0];
     if (file) {
+      // Show local preview immediately
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
@@ -54,11 +70,43 @@ const CoverPhoto: React.FC<CoverPhotoProps> = ({
       };
       reader.readAsDataURL(file);
       e.target.value = ''; // Reset input to allow uploading the same file again
+
+      // Upload to server
+      setIsUploading(true);
+      setErrorMessage(null);
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const result = await uploadCoverImage(formData);
+
+        if (result.error) {
+          setErrorMessage(result.error);
+          return;
+        }
+
+        if (result.success && result.imageUrl) {
+          // Replace local preview with server URL
+          setCoverImage(result.imageUrl);
+
+          // Notify parent component
+          if (onImageChange) {
+            onImageChange(result.imageUrl);
+          }
+        }
+      } catch (error) {
+        setErrorMessage('Failed to upload image. Please try again.');
+        console.error('Upload error:', error);
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!coverImage || !isEditing) return;
+    // Only allow dragging if editable
+    if (!coverImage || !isEditing || !editable) return;
 
     e.preventDefault();
     setIsDragging(true);
@@ -69,7 +117,7 @@ const CoverPhoto: React.FC<CoverPhotoProps> = ({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !imageContainerRef.current) return;
+    if (!isDragging || !imageContainerRef.current || !editable) return;
 
     const containerRect = imageContainerRef.current.getBoundingClientRect();
     const containerHeight = containerRect.height;
@@ -110,31 +158,41 @@ const CoverPhoto: React.FC<CoverPhotoProps> = ({
   };
 
   const handleCancel = () => {
-    // Always remove the image when cancel is clicked
-    setCoverImage(null);
+    // Revert to initial state
+    setCoverImage(initialImage);
     setPosition({ x: 0, y: 0 });
-
-    // Notify parent component that image has been removed
-    if (onImageChange) {
-      onImageChange(null);
-    }
-
     setIsEditing(false);
+    setErrorMessage(null);
+
+    // Notify parent component
+    if (onImageChange) {
+      onImageChange(initialImage);
+    }
   };
 
   const handleEdit = () => {
+    // Only allow editing if editable
+    if (!editable) return;
     setIsEditing(true);
   };
 
   return (
     <div className="relative w-full">
+      {errorMessage && (
+        <div className="absolute top-0 left-0 right-0 bg-red-100 text-red-700 px-4 py-2 z-10">
+          {errorMessage}
+        </div>
+      )}
+
       <div
         ref={imageContainerRef}
-        className="w-full h-64 bg-gray-100 relative overflow-hidden transition-all duration-300"
+        className="w-full h-80 bg-gray-100 relative overflow-hidden transition-all duration-300"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        style={{ cursor: isEditing && coverImage ? 'move' : 'default' }}
+        style={{
+          cursor: isEditing && coverImage && editable ? 'move' : 'default'
+        }}
       >
         {coverImage ? (
           <div
@@ -150,30 +208,69 @@ const CoverPhoto: React.FC<CoverPhotoProps> = ({
           />
         ) : (
           <div className="flex items-center justify-center h-full">
-            <button
-              onClick={handleButtonClick}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-lg flex items-center space-x-2 hover:bg-gray-50"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            {editable ? (
+              <button
+                onClick={handleButtonClick}
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg flex items-center space-x-2 hover:bg-gray-50"
+                disabled={isUploading}
               >
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                <polyline points="21 15 16 10 5 21"></polyline>
-              </svg>
-              <span>Add cover image</span>
-            </button>
+                {isUploading ? (
+                  <>
+                    <svg
+                      className="animate-spin h-5 w-5 mr-2"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect
+                        x="3"
+                        y="3"
+                        width="18"
+                        height="18"
+                        rx="2"
+                        ry="2"
+                      ></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span>Add cover image</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <div className="text-gray-400">No cover image</div>
+            )}
           </div>
         )}
 
-        {isEditing && coverImage && (
+        {isEditing && coverImage && editable && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
             <div className="text-white text-center px-4 py-2">
               Drag image to reposition
@@ -187,23 +284,34 @@ const CoverPhoto: React.FC<CoverPhotoProps> = ({
           onChange={handleFileChange}
           accept="image/*"
           className="hidden"
+          disabled={isUploading || !editable}
         />
       </div>
 
-      {/* Controls */}
-      {coverImage && (
+      {/* Controls - Only show if editable */}
+      {coverImage && editable && (
         <div className="absolute top-4 right-4 flex space-x-2">
           {isEditing ? (
             <>
               <button
+                onClick={handleButtonClick}
+                className="px-4 py-1 bg-white rounded-md border border-gray-300 text-sm font-medium hover:bg-gray-50"
+                disabled={isUploading}
+                title="Upload new image"
+              >
+                {isUploading ? 'Uploading...' : 'Change Image'}
+              </button>
+              <button
                 onClick={handleCancel}
                 className="px-4 py-1 bg-white rounded-md border border-gray-300 text-sm font-medium hover:bg-gray-50"
+                disabled={isUploading}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveChanges}
                 className="px-4 py-1 bg-white rounded-md border border-gray-300 text-sm font-medium hover:bg-gray-50"
+                disabled={isUploading}
               >
                 Save changes
               </button>

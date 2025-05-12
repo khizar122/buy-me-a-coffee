@@ -4,20 +4,21 @@ import { useCallback, useMemo, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
-
-import { signIn } from 'next-auth/react'; // Use NextAuth's signIn here
+import { registerUser } from '@/actions/auth';
+import { useRouter } from 'next/navigation';
 
 export const useSignUp = () => {
   const defaultValues = useMemo(
     () => ({
+      username: '',
       email: '',
       password: '',
-      confirmPassword: '',
-      name: ''
+      confirmPassword: ''
     }),
     []
   );
 
+  const router = useRouter();
   const form = useForm<z.infer<typeof RegisterValidator>>({
     resolver: zodResolver(RegisterValidator),
     defaultValues
@@ -34,37 +35,41 @@ export const useSignUp = () => {
   }, []);
 
   const onSubmit = useCallback(
-    // async (values: z.infer<typeof RegisterValidator>) => {
-    //   clearMessages(); // Reset states
-    //   setLoading(true);
-    //   try {
-    //     const registerData = await register({
-    //       email: values?.email,
-    //       name: values?.name,
-    //       password: values?.password
-    //     });
+    async (values: z.infer<typeof RegisterValidator>) => {
+      clearMessages(); // Reset states
+      setLoading(true);
 
-    //     if (registerData?.status === 'success') {
-    //       // Trigger client-side redirection using signIn
-    //       await signIn('credentials', {
-    //         email: values?.email,
-    //         password: values?.password,
-    //         redirect: true, // Enable redirection
-    //         callbackUrl: '/dashboard'
-    //       });
-    //     } else {
-    //       setError(registerData?.status || 'Registration failed.');
-    //     }
-    //   } catch (err) {
-    //     console.error('Registration Error:', err);
-    //     setError(
-    //       'Unable to connect to the server. Please check your internet connection and try again.'
-    //     );
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // },
-    // [clearMessages]
+      try {
+        // Using the server action directly
+        startTransition(async () => {
+          const result = await registerUser({
+            username: values.username,
+            email: values.email,
+            password: values.password,
+            displayName: values.username, // Use username as displayName
+            isCreator: false // Default value for new users
+          });
+
+          if (result.success) {
+            setSuccessMessage('Registration successful! Redirecting to verification...');
+            
+            // Redirect to OTP verification page
+            router.push(`/otp?email=${encodeURIComponent(values.email)}`);
+          } else {
+            setError(result.error || 'Registration failed.');
+          }
+
+          setLoading(false);
+        });
+      } catch (err) {
+        console.error('Registration Error:', err);
+        setError(
+          'Unable to connect to the server. Please check your internet connection and try again.'
+        );
+        setLoading(false);
+      }
+    },
+    [clearMessages, router]
   );
 
   return useMemo(

@@ -37,7 +37,7 @@ const Sidebar = () => {
     {
       title: 'Home',
       icon: <Home className="h-5 w-5" />,
-      href: '/home'
+      href: '/dashboard'
     },
     {
       title: 'View page',
@@ -65,12 +65,12 @@ const Sidebar = () => {
     {
       title: 'Shop',
       icon: <ShoppingBag className="h-5 w-5" />,
-      href: '/shop'
+      href: '/comingSoon'
     },
     {
       title: 'Publish',
       icon: <Edit className="h-5 w-5" />,
-      href: '/publish',
+      href: '/comingSoon',
       hasDropdown: true
     }
   ];
@@ -79,22 +79,22 @@ const Sidebar = () => {
     {
       title: 'Buttons & Graphics',
       icon: <Palette className="h-5 w-5" />,
-      href: '/buttons-graphics'
+      href: '/comingSoon'
     },
     {
       title: 'Integrations',
       icon: <Zap className="h-5 w-5" />,
-      href: '/integrations'
+      href: '/comingSoon'
     },
     {
       title: 'Payouts',
       icon: <DollarSign className="h-5 w-5" />,
-      href: '/payouts'
+      href: '/comingSoon'
     },
     {
       title: 'Settings',
       icon: <Settings className="h-5 w-5" />,
-      href: '/settings'
+      href: '/comingSoon'
     }
   ];
 

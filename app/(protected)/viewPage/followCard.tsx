@@ -1,11 +1,11 @@
 // components/FollowCard.tsx
 
-const FollowCard = () => {
+const FollowCard = ({ username }) => {
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm">
       <div className="flex flex-col">
         <h2 className="text-2xl font-bold mb-4">
-          Follow <span className="text-blue-500">samman</span>
+          Follow <span className="text-blue-500">{ username}</span>
         </h2>
 
         <div className="mb-4">

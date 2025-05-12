@@ -1,10 +1,11 @@
+// validators/index.ts
 import * as z from 'zod';
-import { emailValidator } from './sharedValidators';
 
+// You can add this alongside your RegisterValidator
 export const SignInValidator = z.object({
-  email: emailValidator,
-  password: z.string().trim().min(1, {
-    message: 'Password is required'
-  }),
-  isRemember: z.boolean().default(false)
+  email: z.string().email({ message: 'Please enter a valid email address' }),
+
+  password: z.string().min(1, { message: 'Password is required' }),
+
+  isRemember: z.boolean().optional().default(false)
 });

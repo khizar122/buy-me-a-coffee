@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
+import ChooseLayout from './chooseLayout';
 import StatsCards from './statsCard';
 import SupportersCard from './supportersCards';
 import Tabs from './tabs';
 import ThankYouMessage from './thankyouMessage';
-import ChooseLayout from './chooseLayout';
 
 const SupportersPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('one-time');
@@ -15,7 +15,7 @@ const SupportersPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#e5ffff' }}>
+    <div className="min-h-screen  bg-profile-bg">
       <div className="container max-w-4xl mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Supporters</h1>
 

@@ -1,8 +1,15 @@
 'use client';
 
+import {
+  getUserProfile,
+  updateProfile,
+  uploadFeaturedVideo,
+  uploadProfileImage
+} from '@/actions/profile';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import EmojiPicker from 'emoji-picker-react';
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 interface EditProfileDialogProps {
   isOpen: boolean;
@@ -21,21 +28,32 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
   profileImage = '/placeholder-profile.jpg',
   onSave
 }) => {
-  const [fullName, setFullName] = React.useState(username);
-  const [bioText, setBioText] = React.useState(bio);
-  const [socialLinks, setSocialLinks] = React.useState([
-    'https://www.google.com'
-  ]);
-  const [showEmojiPicker, setShowEmojiPicker] = React.useState(false);
-  const [selectedEmoji, setSelectedEmoji] = React.useState('☕');
-  const [coffeeText, setCoffeeText] = React.useState('coffee');
-  const [showThemeColorPicker, setShowThemeColorPicker] = React.useState(false);
-  const [selectedThemeColor, setSelectedThemeColor] =
-    React.useState('Cotton Candy');
+  const [loading, setLoading] = useState(false);
+  const [fullName, setFullName] = useState(username);
+  const [bioText, setBioText] = useState(bio);
+  const [aboutMeText, setAboutMeText] = useState('i am a software enginerr');
+  const [socialLinks, setSocialLinks] = useState(['https://www.google.com']);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [selectedEmoji, setSelectedEmoji] = useState('☕');
+  const [coffeeText, setCoffeeText] = useState('coffee');
+  const [showThemeColorPicker, setShowThemeColorPicker] = useState(false);
+  const [selectedThemeColor, setSelectedThemeColor] = useState('Cotton Candy');
   const [selectedThemeColorCode, setSelectedThemeColorCode] =
-    React.useState('#ff66ff');
-  const [displaySupporterCount, setDisplaySupporterCount] =
-    React.useState(false);
+    useState('#ff66ff');
+  const [displaySupporterCount, setDisplaySupporterCount] = useState(false);
+  const [socialShareHandle, setSocialShareHandle] = useState('username');
+
+  // Media upload states
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [currentProfileImage, setCurrentProfileImage] = useState(profileImage);
+  const [featuredVideoUrl, setFeaturedVideoUrl] = useState('');
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+
+  // Refs for file inputs
+  const profileImageInputRef = useRef<HTMLInputElement>(null);
+  const featuredVideoInputRef = useRef<HTMLInputElement>(null);
 
   const themeColors = [
     { name: 'Cotton Candy', color: '#ff66ff' },
@@ -44,6 +62,78 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
     { name: 'Plum Passion', color: '#9933ff' },
     { name: 'Crimson Sunset', color: '#ff4433' }
   ];
+  const presetButtons = [
+    { emoji: '☕', text: 'Coffee' },
+    { emoji: '🍺', text: 'Beer' },
+    { emoji: '🍕', text: 'Pizza' },
+    { emoji: '📖', text: 'Book' }
+  ];
+  
+
+  // Fetch user profile data when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchUserProfile();
+    }
+  }, [isOpen]);
+
+  const fetchUserProfile = async () => {
+    try {
+      setLoading(true);
+      const userData = await getUserProfile();
+
+      if (userData) {
+        setFullName(userData.fullName || username);
+        setBioText(userData.bio || bio);
+        setAboutMeText(userData.aboutMe || '');
+        setCurrentProfileImage(userData.profilePictureUrl || profileImage);
+        setFeaturedVideoUrl(userData.featuredVideoUrl || '');
+
+        // Handle supportTerm - extract emoji and text
+        if (userData.supportTerm) {
+          // Check if the first character is an emoji
+          const firstChar = userData.supportTerm.charAt(0);
+          const isEmoji = /\p{Emoji}/u.test(firstChar);
+
+          if (isEmoji) {
+            // Extract the emoji and the rest of the text
+            setSelectedEmoji(firstChar);
+            setCoffeeText(userData.supportTerm.slice(1).trim());
+          } else {
+            // No emoji found, just set the text
+            setCoffeeText(userData.supportTerm);
+          }
+        } else {
+          // Default values
+          setSelectedEmoji('☕');
+          setCoffeeText('coffee');
+        }
+
+        setSelectedThemeColor(
+          userData.themeColor
+            ? getThemeColorName(userData.themeColor)
+            : 'Cotton Candy'
+        );
+        setSelectedThemeColorCode(userData.themeColor || '#ff66ff');
+        setDisplaySupporterCount(userData.showSupporterCount);
+        setSocialShareHandle(userData.socialShareHandle || username);
+        setSocialLinks(
+          userData.socialLinks && userData.socialLinks.length > 0
+            ? userData.socialLinks
+            : ['']
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast.error('Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
+  const getThemeColorName = (colorCode: string) => {
+    const color = themeColors.find((c) => c.color === colorCode);
+    return color ? color.name : 'Cotton Candy';
+  };
 
   const addSocialLink = () => {
     setSocialLinks([...socialLinks, '']);
@@ -84,9 +174,179 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
     setDisplaySupporterCount(!displaySupporterCount);
   };
 
-  const handleSave = () => {
-    onSave({ fullName, bio: bioText });
-    onOpenChange(false);
+  // Handler for profile image upload
+const handleProfileImageChange = async (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+
+  const file = files[0];
+
+  // Validate file type
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) {
+    toast.error('Please upload a JPEG, PNG, GIF, or WEBP image');
+    return;
+  }
+
+  // Validate file size (max 5MB)
+  const maxSize = 5 * 1024 * 1024;
+  if (file.size > maxSize) {
+    toast.error('Maximum file size is 5MB');
+    return;
+  }
+
+  try {
+    setUploadingImage(true);
+
+    // Create a preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        setCurrentProfileImage(e.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+
+    // Upload the image
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const result = await uploadProfileImage(formData);
+
+    if (result.error) {
+      toast.error(result.error);
+      // Reset to previous image
+      setCurrentProfileImage(profileImage);
+      return;
+    }
+
+    toast.success('Profile picture updated successfully');
+
+    // Update with the actual URL from server
+    setCurrentProfileImage(result.imageUrl);
+  } catch (error) {
+    console.error('Upload error:', error);
+    toast.error('An unexpected error occurred');
+    // Reset to previous image
+    setCurrentProfileImage(profileImage);
+  } finally {
+    setUploadingImage(false);
+  }
+};
+
+
+  // Handler for featured video upload
+  const handleFeaturedVideoChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+
+    // Validate file type
+    const allowedTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please upload an MP4, WEBM, or MOV video');
+      return;
+    }
+
+    // Validate file size (max 100MB)
+    const maxSize = 100 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('Maximum file size is 100MB');
+      return;
+    }
+
+    try {
+      setUploadingVideo(true);
+      setVideoFile(file);
+
+      // Create a preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          setVideoPreview(e.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+
+      // Upload the video
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const result = await uploadFeaturedVideo(formData);
+
+      if (result.error) {
+        toast.error(result.error);
+        setVideoPreview(null);
+        setVideoFile(null);
+        return;
+      }
+
+      toast.success('Featured video uploaded successfully');
+
+      // Update with the actual URL from server
+      setFeaturedVideoUrl(result.videoUrl);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('An unexpected error occurred');
+      setVideoPreview(null);
+      setVideoFile(null);
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
+  // Function to handle manual video URL input
+  const handleVideoUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFeaturedVideoUrl(e.target.value);
+    // Clear video preview if any
+    setVideoPreview(null);
+    setVideoFile(null);
+  };
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+
+      // Prepare profile data
+      const profileData = {
+        fullName,
+        bio: bioText,
+        aboutMe: aboutMeText,
+        featuredVideoUrl,
+        profilePictureUrl: currentProfileImage,
+        supportTerm: `${selectedEmoji} ${coffeeText}`.trim(), // Combine emoji and text
+        themeColor: selectedThemeColorCode,
+        showSupporterCount: displaySupporterCount,
+        socialShareHandle,
+        socialLinks: socialLinks.filter((link) => link.trim() !== '')
+      };
+
+      // Update profile
+      const result = await updateProfile(profileData);
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      // Call the onSave callback
+      onSave({ fullName, bio: bioText });
+
+      toast.success('Profile updated successfully');
+
+      // Close the dialog
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -101,14 +361,20 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
             <button
               onClick={() => onOpenChange(false)}
               className="px-2 sm:px-4 py-1 sm:py-2 text-sm font-medium rounded-md"
+              disabled={loading || uploadingImage || uploadingVideo}
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className="px-2 sm:px-4 py-1 sm:py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
+              className={`px-2 sm:px-4 py-1 sm:py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 ${
+                loading || uploadingImage || uploadingVideo
+                  ? 'opacity-50 cursor-not-allowed'
+                  : ''
+              }`}
+              disabled={loading || uploadingImage || uploadingVideo}
             >
-              Save
+              {loading ? 'Saving...' : 'Save'}
             </button>
           </div>
         </div>
@@ -119,16 +385,29 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
           <div className="mb-6">
             <h4 className="text-sm font-medium mb-2">Profile photo</h4>
             <div className="flex items-center">
-              <div className="h-12 sm:h-16 w-12 sm:w-16 overflow-hidden rounded-md mr-4">
+              <div className="h-12 sm:h-16 w-12 sm:w-16 overflow-hidden rounded-md mr-4 relative">
+                {uploadingImage && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className="animate-spin h-5 w-5 border-2 border-white border-r-transparent rounded-full"></div>
+                  </div>
+                )}
                 <img
-                  src={profileImage}
+                  src={currentProfileImage}
                   alt="Profile"
                   className="h-full w-full object-cover"
                 />
               </div>
-              <button className="px-3 sm:px-4 py-1 sm:py-2 border border-gray-300 rounded-md text-sm font-medium">
+              <label className="px-3 sm:px-4 py-1 sm:py-2 border border-gray-300 rounded-md text-sm font-medium cursor-pointer">
                 Upload
-              </button>
+                <input
+                  type="file"
+                  ref={profileImageInputRef}
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  className="hidden"
+                  onChange={handleProfileImageChange}
+                  disabled={uploadingImage || loading}
+                />
+              </label>
             </div>
           </div>
 
@@ -144,6 +423,7 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
               onChange={(e) => setFullName(e.target.value)}
               className="w-full px-3 py-2 bg-gray-100 rounded-md"
               placeholder="Your name"
+              disabled={loading}
             />
           </div>
 
@@ -159,6 +439,7 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
               onChange={(e) => setBioText(e.target.value)}
               className="w-full px-3 py-2 bg-gray-100 rounded-md"
               placeholder="Tell people what you're creating..."
+              disabled={loading}
             />
           </div>
 
@@ -235,7 +516,7 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                     </div>
                   </div>
                 </div>
-                <button className="text-gray-500">
+                <button type="button" className="text-gray-500">
                   <svg
                     width="18"
                     height="18"
@@ -282,7 +563,7 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                     </div>
                   </div>
                 </div>
-                <button className="text-gray-500">
+                <button type="button" className="text-gray-500">
                   <svg
                     width="18"
                     height="18"
@@ -310,7 +591,7 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
             <h4 className="text-sm font-medium mb-2">About me</h4>
             <div className="bg-gray-100 rounded-md p-4">
               <div className="flex items-center mb-2">
-                <button className="p-1 mr-2">
+                <button type="button" className="p-1 mr-2">
                   <svg
                     width="16"
                     height="16"
@@ -325,7 +606,7 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                   </svg>
                 </button>
-                <button className="p-1 mr-2">
+                <button type="button" className="p-1 mr-2">
                   <svg
                     width="16"
                     height="16"
@@ -342,18 +623,134 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                   </svg>
                 </button>
               </div>
-              <p className="text-sm">i am a software enginerr</p>
+              <textarea
+                value={aboutMeText}
+                onChange={(e) => setAboutMeText(e.target.value)}
+                className="w-full bg-transparent border-none outline-none resize-none text-sm"
+                disabled={loading}
+              />
             </div>
           </div>
 
           {/* Featured video */}
           <div className="mb-6">
             <h4 className="text-sm font-medium mb-2">Featured video</h4>
-            <input
-              type="text"
-              placeholder="Paste your YouTube or Vimeo link here"
-              className="w-full px-3 py-2 bg-gray-100 rounded-md"
-            />
+            <div className="space-y-3">
+              {/* Input for paste */}
+              <input
+                type="text"
+                value={featuredVideoUrl}
+                onChange={handleVideoUrlChange}
+                placeholder="Paste your YouTube or Vimeo link here"
+                className="w-full px-3 py-2 bg-gray-100 rounded-md"
+                disabled={loading || uploadingVideo}
+              />
+
+              {/* Or upload a video */}
+              <div className="flex items-center">
+                <span className="text-xs text-gray-500 mr-2">or</span>
+                <label className="px-3 py-1 border border-gray-300 rounded-md text-xs font-medium cursor-pointer">
+                  Upload Video
+                  <input
+                    type="file"
+                    ref={featuredVideoInputRef}
+                    accept="video/mp4,video/webm,video/quicktime"
+                    className="hidden"
+                    onChange={handleFeaturedVideoChange}
+                    disabled={uploadingVideo || loading}
+                  />
+                </label>
+              </div>
+
+              {/* Video preview */}
+              {(videoPreview || featuredVideoUrl) && (
+                <div className="relative rounded-md overflow-hidden bg-gray-100">
+                  {uploadingVideo && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+                      <div className="animate-spin h-8 w-8 border-4 border-white border-r-transparent rounded-full"></div>
+                    </div>
+                  )}
+
+                  {videoPreview ? (
+                    <video
+                      src={videoPreview}
+                      controls
+                      className="w-full h-40 object-contain"
+                    ></video>
+                  ) : (
+                    featuredVideoUrl &&
+                    (featuredVideoUrl.includes('youtube.com') ||
+                    featuredVideoUrl.includes('youtu.be') ? (
+                      <div className="h-40 flex items-center justify-center bg-gray-800 text-white">
+                        <div className="text-center">
+                          <svg
+                            width="40"
+                            height="40"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="mx-auto mb-2"
+                          >
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                          </svg>
+                          <p className="text-xs">YouTube Video</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="h-40 flex items-center justify-center bg-gray-800 text-white">
+                        <div className="text-center">
+                          <svg
+                            width="40"
+                            height="40"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="mx-auto mb-2"
+                          >
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                          </svg>
+                          <p className="text-xs">
+                            Video URL: {featuredVideoUrl.substring(0, 30)}...
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+
+                  {/* Remove button */}
+                  <button
+                    type="button"
+                    className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1 text-white"
+                    onClick={() => {
+                      setVideoPreview(null);
+                      setVideoFile(null);
+                      setFeaturedVideoUrl('');
+                    }}
+                    disabled={uploadingVideo}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Social links */}
@@ -380,13 +777,16 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                 </svg>
                 <input
                   type="text"
-                  defaultValue={link}
+                  value={link}
                   onChange={(e) => updateSocialLink(index, e.target.value)}
                   className="bg-transparent flex-1 outline-none text-xs sm:text-sm truncate"
+                  disabled={loading}
                 />
                 <button
+                  type="button"
                   className="ml-2"
                   onClick={() => removeSocialLink(index)}
+                  disabled={loading || socialLinks.length <= 1}
                 >
                   <svg
                     width="16"
@@ -408,6 +808,8 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
             <button
               onClick={addSocialLink}
               className="flex items-center mt-3 text-xs sm:text-sm px-3 sm:px-4 py-1 sm:py-2 rounded-full border border-blue-600 text-blue-600"
+              disabled={loading}
+              type="button"
             >
               <svg
                 width="14"
@@ -440,6 +842,8 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                 <button
                   className="bg-white border border-gray-200 p-2 rounded-md mr-2 sm:mr-3 flex items-center justify-center"
                   onClick={toggleEmojiPicker}
+                  type="button"
+                  disabled={loading}
                 >
                   <span role="img" aria-label="emoji">
                     {selectedEmoji}
@@ -470,57 +874,31 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                 value={coffeeText}
                 onChange={(e) => setCoffeeText(e.target.value)}
                 className="bg-gray-100 rounded-md p-2 sm:p-3 flex-1 text-sm"
+                disabled={loading}
               />
             </div>
             <div className="flex flex-wrap mt-3 gap-2">
-              <button
-                className="flex items-center bg-gray-100 rounded-md px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm"
-                onClick={() => {
-                  setSelectedEmoji('☕');
-                  setCoffeeText('Coffee');
-                }}
-              >
-                <span role="img" aria-label="coffee" className="mr-1 sm:mr-2">
-                  ☕
-                </span>
-                Coffee
-              </button>
-              <button
-                className="flex items-center bg-gray-100 rounded-md px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm"
-                onClick={() => {
-                  setSelectedEmoji('🍺');
-                  setCoffeeText('Beer');
-                }}
-              >
-                <span role="img" aria-label="beer" className="mr-1 sm:mr-2">
-                  🍺
-                </span>
-                Beer
-              </button>
-              <button
-                className="flex items-center bg-gray-100 rounded-md px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm"
-                onClick={() => {
-                  setSelectedEmoji('🍕');
-                  setCoffeeText('Pizza');
-                }}
-              >
-                <span role="img" aria-label="pizza" className="mr-1 sm:mr-2">
-                  🍕
-                </span>
-                Pizza
-              </button>
-              <button
-                className="flex items-center bg-gray-100 rounded-md px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm"
-                onClick={() => {
-                  setSelectedEmoji('📖');
-                  setCoffeeText('Book');
-                }}
-              >
-                <span role="img" aria-label="book" className="mr-1 sm:mr-2">
-                  📖
-                </span>
-                Book
-              </button>
+              {presetButtons.map((preset) => (
+                <button
+                  key={preset.text}
+                  className="flex items-center bg-gray-100 rounded-md px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm"
+                  onClick={() => {
+                    setSelectedEmoji(preset.emoji);
+                    setCoffeeText(preset.text);
+                  }}
+                  type="button"
+                  disabled={loading}
+                >
+                  <span
+                    role="img"
+                    aria-label={preset.text.toLowerCase()}
+                    className="mr-1 sm:mr-2"
+                  >
+                    {preset.emoji}
+                  </span>
+                  {preset.text}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -536,6 +914,8 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                 <button
                   className="flex items-center justify-between bg-white border border-gray-200 rounded-md px-2 sm:px-3 py-1 sm:py-2 w-full text-xs sm:text-sm"
                   onClick={toggleThemeColorPicker}
+                  type="button"
+                  disabled={loading}
                 >
                   <span>{selectedThemeColor}</span>
                   <svg
@@ -562,6 +942,8 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                         onClick={() =>
                           selectThemeColor(theme.name, theme.color)
                         }
+                        type="button"
+                        disabled={loading}
                       >
                         <div
                           className="w-4 h-4 sm:w-6 sm:h-6 rounded-full mr-2 sm:mr-3"
@@ -583,7 +965,11 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
                 <h4 className="text-xs sm:text-sm font-medium">
                   Display supporter count
                 </h4>
-                <button className="ml-1 sm:ml-2">
+                <button
+                  className="ml-1 sm:ml-2"
+                  type="button"
+                  disabled={loading}
+                >
                   <svg
                     width="14"
                     height="14"
@@ -603,6 +989,8 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
               <button
                 className={`w-10 sm:w-12 h-5 sm:h-6 rounded-full flex items-center p-1 transition-colors ${displaySupporterCount ? 'bg-black' : 'bg-gray-200'}`}
                 onClick={toggleSupporterCount}
+                type="button"
+                disabled={loading}
               >
                 <div
                   className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white transform transition-transform ${displaySupporterCount ? 'translate-x-5 sm:translate-x-6' : 'translate-x-0'}`}
@@ -615,7 +1003,7 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
           <div className="mb-6">
             <div className="flex items-center mb-2">
               <h4 className="text-xs sm:text-sm font-medium">Social sharing</h4>
-              <button className="ml-1 sm:ml-2">
+              <button className="ml-1 sm:ml-2" type="button" disabled={loading}>
                 <svg
                   width="14"
                   height="14"
@@ -636,25 +1024,11 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
               <span className="text-gray-500 mr-2">@</span>
               <input
                 type="text"
-                defaultValue="username"
+                value={socialShareHandle}
+                onChange={(e) => setSocialShareHandle(e.target.value)}
                 className="bg-transparent flex-1 outline-none text-xs sm:text-sm"
+                disabled={loading}
               />
-              <button className="ml-2">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-gray-500"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
             </div>
           </div>
         </div>

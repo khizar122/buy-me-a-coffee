@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
 import Image from 'next/image';
+import React from 'react';
 
 interface PostType {
   id: string;
@@ -57,7 +57,7 @@ const PublishedCard: React.FC<PublishedCardProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {posts.map((post) => (
           <div key={post.id} className="flex flex-col">
-            <div className="relative h-56 overflow-hidden">
+            <div className="relative h-56 overflow-hidden rounded-lg">
               <Image
                 src={post.imageUrl}
                 alt={post.title}
