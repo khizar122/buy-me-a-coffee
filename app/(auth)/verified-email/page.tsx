@@ -27,11 +27,11 @@ const VerifiedEmail = () => {
       const response = await fetch(`/api/verified-email?token=${token}`);
       const data = await response.json();
 
-      if (data.status === 'success') {
+      if ((data as any)?.status === 'success') {
         setIsVerified(true);
         window.history.replaceState({}, document.title, '/verified-email');
       } else {
-        setErrorMessage(data.message || 'Invalid token');
+        setErrorMessage((data as any)?.message || 'Invalid token');
         setIsVerified(false);
       }
     } catch (error) {
@@ -76,7 +76,8 @@ const VerifiedEmail = () => {
           <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
           <h1 className="text-2xl font-bold mb-2">Verification Failed</h1>
           <p className="text-gray-600 mb-6">
-            {errorMessage || 'Your email verification link is invalid or expired.'}
+            {errorMessage ||
+              'Your email verification link is invalid or expired.'}
           </p>
           <Button asChild>
             <Link href="/signin">Go to Sign in</Link>

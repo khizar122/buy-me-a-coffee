@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -29,7 +28,10 @@ const formSchema = z.object({
 });
 
 export default function SelfProfile() {
-  const { data: session, status } = useSession({ required: true });
+  const sessionData = useSession();
+  const session = sessionData?.data;
+  const status = sessionData?.status;
+
   const [isSaving, setIsSaving] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -99,13 +101,15 @@ export default function SelfProfile() {
           <div className="bg-blue-50 p-6 rounded-lg flex items-center justify-between">
             <div className="flex items-center gap-4">
               <img
-                src={session.user?.ProfileImage || '/placeholder.svg'}
+                src={session?.user?.ProfileImage || '/placeholder.svg'}
                 alt="Profile Avatar"
                 className="rounded-full w-16 h-16 object-cover"
               />
               <div>
-                <h2 className="text-xl font-semibold">{session.user.name}</h2>
-                <p className="text-muted-foreground">{session.user.userType}</p>
+                <h2 className="text-xl font-semibold">{session?.user?.name}</h2>
+                <p className="text-muted-foreground">
+                  {session?.user?.userType}
+                </p>
               </div>
             </div>
             <Button type="submit" disabled={isSaving}>
@@ -153,56 +157,6 @@ export default function SelfProfile() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Address */}
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Address</h3>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="country"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Country</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>City</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="streetNo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Street Address</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>

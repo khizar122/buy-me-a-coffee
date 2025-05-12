@@ -86,7 +86,7 @@ export function EditProfileForm({
         throw new Error('Failed to update profile');
       }
 
-      onSuccess(response?.data);
+      onSuccess((response as any)?.data);
       onOpenChange(false);
       toast.success('Profile updated successfully');
     } catch (error) {

@@ -2,7 +2,7 @@ export interface UserProfileResponse {
   firstName: string;
   lastName: string;
   email: string;
-  phoneNumber: number;
+  phoneNumber: string;
   userType: string;
   country: string;
   city: string;

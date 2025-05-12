@@ -74,7 +74,7 @@ type UserWithCounts = User & {
     followsFollowers: number;
     posts: number;
     paymentsReceived?: number;
-  }
+  };
 };
 
 // Pagination data
@@ -233,7 +233,9 @@ export async function getAllUsers({
 /**
  * Get user by ID with detailed information
  */
-export async function getUserById(userId: string): Promise<GetUserByIdResponse> {
+export async function getUserById(
+  userId: string
+): Promise<GetUserByIdResponse> {
   try {
     if (!userId) {
       return { error: 'User ID is required' };
@@ -274,7 +276,7 @@ export async function getUserById(userId: string): Promise<GetUserByIdResponse> 
     };
 
     // Find user in the database with their related data
-    const user = await prisma.user.findUnique({
+    const user = (await prisma.user.findUnique({
       where: { id: userIdBigInt },
       include: {
         posts: {
@@ -286,7 +288,7 @@ export async function getUserById(userId: string): Promise<GetUserByIdResponse> 
             id: true,
             title: true,
             // slug: true, // Removed as it does not exist in the PostSelect type
-            // excerpt: true, 
+            // excerpt: true,
             coverImage: true,
             createdAt: true,
             updatedAt: true
@@ -298,7 +300,7 @@ export async function getUserById(userId: string): Promise<GetUserByIdResponse> 
             id: true,
             name: true,
             // description field removed as it does not exist in the schema
-            price: true,
+            price: true
             // interval field removed as it does not exist in the schema
             // Removed 'features' as it does not exist in the schema
           }
@@ -313,7 +315,7 @@ export async function getUserById(userId: string): Promise<GetUserByIdResponse> 
           }
         }
       }
-    }) as UserWithFullData | null;
+    })) as UserWithFullData | null;
 
     if (!user) {
       return { error: 'User not found' };
@@ -326,7 +328,7 @@ export async function getUserById(userId: string): Promise<GetUserByIdResponse> 
         const parsedLinks = JSON.parse(user.socialLinks.toString());
         // Validate the structure of parsed links
         if (Array.isArray(parsedLinks)) {
-          socialLinks = parsedLinks.map(link => ({
+          socialLinks = parsedLinks.map((link) => ({
             platform: typeof link.platform === 'string' ? link.platform : '',
             url: typeof link.url === 'string' ? link.url : ''
           }));
@@ -338,9 +340,9 @@ export async function getUserById(userId: string): Promise<GetUserByIdResponse> 
     }
 
     // Process subscription plan features
-    const subscriptionPlans = user.subscriptionPlans.map(plan => {
+    const subscriptionPlans = user.subscriptionPlans.map((plan) => {
       let features: string[] | null = null;
-      
+
       if (plan.features) {
         try {
           if (typeof plan.features === 'string') {
@@ -352,7 +354,7 @@ export async function getUserById(userId: string): Promise<GetUserByIdResponse> 
           console.error('Error parsing subscription plan features:', e);
         }
       }
-      
+
       return {
         id: plan.id.toString(),
         name: plan.name,
@@ -374,22 +376,23 @@ export async function getUserById(userId: string): Promise<GetUserByIdResponse> 
         creatorTagline: user.creatorTagline,
         bio: user.bio,
         aboutMe: user.aboutMe,
-        profilePictureUrl: user.profilePictureUrl || 'https://via.placeholder.com/150',
-        coverImage: user.coverImage,
+        profilePictureUrl:
+          user.profilePictureUrl || 'https://via.placeholder.com/150',
+        coverImage: user?.coverImage || '',
         featuredVideoUrl: user.featuredVideoUrl,
         supportTerm: user.supportTerm,
         themeColor: user.themeColor,
         showSupporterCount: user.showSupporterCount,
         socialShareHandle: user.socialShareHandle,
         isCreator: user.isCreator,
-        isVerified: user.isVerified,
+        isVerified: user?.isVerified,
         // Use optional chaining and provide defaults for count properties
         followersCount: user._count?.followsFollowers || 0,
         postsCount: user._count?.posts || 0,
         supportersCount: user._count?.paymentsReceived || 0,
         createdAt: user.createdAt,
         socialLinks,
-        posts: user.posts.map(post => ({
+        posts: user.posts.map((post) => ({
           id: post.id.toString(),
           title: post.title,
           slug: post.slug,

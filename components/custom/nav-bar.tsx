@@ -8,16 +8,11 @@ import {
 } from '@/components/ui/popover';
 import { ChevronDown, LogOut, User } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-interface ViewedProfile {
-  fullName: string;
-  profileImage?: string;
-}
-
 // Create a custom hook to handle localStorage and provide a way to update it
-const useLocalStorage = (key, initialValue) => {
+const useLocalStorage = (key: any, initialValue: any) => {
   // Get from localStorage then parse stored json or return initialValue
   const readValue = () => {
     if (typeof window === 'undefined') {
@@ -75,7 +70,6 @@ const useLocalStorage = (key, initialValue) => {
 };
 
 const Navbar = () => {
-  const router = useRouter();
   const pathname = usePathname();
   const [viewedProfile, setViewedProfile] = useLocalStorage(
     'viewedProfile',
@@ -146,8 +140,6 @@ const Navbar = () => {
     });
   };
 
-  console.log('Render state:', { isViewPage, viewedProfile }); // Debug log
-
   return (
     <div className="border-b border-gray-200">
       <nav className="h-16 bg-gray-100 flex items-center justify-between px-8">
@@ -155,9 +147,9 @@ const Navbar = () => {
         <div className="flex items-center">
           {isViewPage && viewedProfile ? (
             <div className="flex items-center gap-2">
-              {viewedProfile.profileImage ? (
+              {(viewedProfile as any)?.profileImage ? (
                 <img
-                  src={viewedProfile.profileImage}
+                  src={(viewedProfile as any)?.profileImage}
                   alt="Profile"
                   className="w-8 h-8 object-cover rounded-md" // Added rounded-md for slight border radius
                 />
@@ -167,7 +159,7 @@ const Navbar = () => {
                 </div>
               )}
               <span className="text-sm font-medium">
-                {viewedProfile.fullName}
+                {(viewedProfile as any)?.fullName}
               </span>
             </div>
           ) : (

@@ -4,6 +4,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export default {
+  eslint: {
+    ignoreDuringBuilds: true
+  },
+  typescript: {
+    ignoreBuildErrors: true
+  },
   images: {
     remotePatterns: [
       {

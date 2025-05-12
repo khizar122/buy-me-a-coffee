@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 
 interface SupportCardProps {
   username: string;
-  supportTerm: string;
+  supportTerm: string | undefined;
   onSupport?: (
     name: string,
     message: string,
@@ -30,8 +30,6 @@ const SupportCard: React.FC<SupportCardProps> = ({
 
   useEffect(() => {
     if (supportTerm) {
-      // Check if the first character is an emoji
-      const firstChar = supportTerm.charAt(0);
       const match = supportTerm.match(/(\p{Emoji})\s?(.*)/u);
 
       if (match) {
@@ -45,7 +43,7 @@ const SupportCard: React.FC<SupportCardProps> = ({
     }
   }, [supportTerm]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: any) => {
     e.preventDefault();
     onSupport(name, message, amount, isRecurring);
   };
