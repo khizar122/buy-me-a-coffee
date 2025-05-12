@@ -36,11 +36,10 @@ export const useSignIn = () => {
 
   const onSubmit = useCallback(
     async (values: z.infer<typeof SignInValidator>) => {
-      clearMessages(); // Reset states
+      clearMessages();
       setLoading(true);
 
       try {
-        // Using the server action directly
         startTransition(async () => {
           const result = await signInUser({
             email: values.email,

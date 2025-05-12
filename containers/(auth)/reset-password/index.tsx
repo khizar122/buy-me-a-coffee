@@ -9,8 +9,7 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
-  FormMessage
+  FormLabel
 } from '@/components/ui/form';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -18,19 +17,18 @@ import { Input } from '@/components/ui/input';
 import { useSignUp } from './hooks/useSignUp';
 
 const ResetPasswordContainer = () => {
-  const [otp, setOtp] = useState<string | undefined>(''); // State for OTP
+  const [otp, setOtp] = useState<string | undefined>('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordMismatchError, setPasswordMismatchError] = useState('');
-  const { form, error, successMessage, onSubmit, isPending, loading } = useSignUp();
-  const router=useRouter()
-  // UseEffect for directly extracting OTP from the URL query params
+  const { form, error, successMessage, isPending, loading } = useSignUp();
+  const router = useRouter();
+
   useEffect(() => {
-    // Using window.location to get the query params
     const urlParams = new URLSearchParams(window.location.search);
     const otpParam = urlParams.get('otp');
     if (otpParam) {
-      setOtp(otpParam); // Set OTP value from the URL
+      setOtp(otpParam);
     }
   }, []);
 
@@ -50,12 +48,12 @@ const ResetPasswordContainer = () => {
       const response = await fetch('api/reset-password', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          otp, // Pass OTP to the API
-          password,
-        }),
+          otp,
+          password
+        })
       });
 
       const data = await response.json();
@@ -77,21 +75,28 @@ const ResetPasswordContainer = () => {
       </div>
 
       <div className="text-center">
-        <h2 className="text-2xl font-semibold tracking-tight">Reset Password</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">
+          Reset Password
+        </h2>
         <p className="text-sm text-gray-500 mt-2">
           <b>Email verified!</b> Please enter a new password.
         </p>
       </div>
 
       <Form {...form}>
-        <form onSubmit={handleResetPassword} className="flex flex-col gap-4 px-4 sm:px-16 w-full">
+        <form
+          onSubmit={handleResetPassword}
+          className="flex flex-col gap-4 px-4 sm:px-16 w-full"
+        >
           <div className="flex flex-col gap-2">
             <FormField
               control={form.control}
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-semibold">New Password</FormLabel>
+                  <FormLabel className="text-sm font-semibold">
+                    New Password
+                  </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -111,7 +116,9 @@ const ResetPasswordContainer = () => {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-semibold">Confirm Password</FormLabel>
+                  <FormLabel className="text-sm font-semibold">
+                    Confirm Password
+                  </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -134,7 +141,9 @@ const ResetPasswordContainer = () => {
           </div>
 
           {passwordMismatchError && (
-            <div className="text-red-500 text-sm mt-2">{passwordMismatchError}</div>
+            <div className="text-red-500 text-sm mt-2">
+              {passwordMismatchError}
+            </div>
           )}
 
           <Button
@@ -146,7 +155,10 @@ const ResetPasswordContainer = () => {
           </Button>
 
           <p className="text-center text-sm text-gray-600 mt-4">
-            <Link href="/signin" className="font-semibold text-gray-800 hover:underline">
+            <Link
+              href="/signin"
+              className="font-semibold text-gray-800 hover:underline"
+            >
               Cancel
             </Link>
           </p>

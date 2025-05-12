@@ -20,7 +20,7 @@ function generateOTP() {
 // Helper function to send OTP email using Resend
 async function sendVerificationEmail(email, otp, username) {
   try {
-    console.log("tes",email)
+    console.log('tes', email);
     // Ensure username is a string
     const safeUsername = username?.toString() || 'User';
 
@@ -180,11 +180,11 @@ export async function registerUser(userData) {
   }
 }
 
-export async function signInUser(userData) {
+export async function signInUser(userData: any) {
   try {
     // Validate input data
     const validatedData = SignInSchema.safeParse(userData);
-
+    console.log('userData', validatedData);
     if (!validatedData.success) {
       return {
         success: false,
@@ -206,43 +206,44 @@ export async function signInUser(userData) {
       };
     }
 
+    console.log('user', user);
     // Check if user is verified
-    if (!user.isVerified) {
-      // Generate new OTP for verification
-      const otp = generateOTP();
-      const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+    // if (!user.isVerified) {
+    //   // Generate new OTP for verification
+    //   const otp = generateOTP();
+    //   const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
 
-      // Update user with new verification code
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          verificationCode: otp,
-          verificationExpiry: otpExpiry
-        }
-      });
+    //   // Update user with new verification code
+    //   await prisma.user.update({
+    //     where: { id: user.id },
+    //     data: {
+    //       verificationCode: otp,
+    //       verificationExpiry: otpExpiry
+    //     }
+    //   });
 
-      // Send verification email
-      await sendVerificationEmail(email, otp, user.username);
+    //   // Send verification email
+    //   await sendVerificationEmail(email, otp, user.username);
 
-      // Store email in cookies for verification flow - use await with cookies()
-      const cookieStore = cookies();
-      await cookieStore.set({
-        name: 'pending-verification-email',
-        value: email,
-        httpOnly: true,
-        path: '/',
-        maxAge: 60 * 30, // 30 minutes
-        sameSite: 'strict'
-      });
+    //   // Store email in cookies for verification flow - use await with cookies()
+    //   const cookieStore = cookies();
+    //   await cookieStore.set({
+    //     name: 'pending-verification-email',
+    //     value: email,
+    //     httpOnly: true,
+    //     path: '/',
+    //     maxAge: 60 * 30, // 30 minutes
+    //     sameSite: 'strict'
+    //   });
 
-      return {
-        success: false,
-        error:
-          'Email not verified. Please check your email for a verification code.',
-        needsVerification: true,
-        email: email
-      };
-    }
+    //   return {
+    //     success: false,
+    //     error:
+    //       'Email not verified. Please check your email for a verification code.',
+    //     needsVerification: true,
+    //     email: email
+    //   };
+    // }
 
     // Verify password
     const passwordMatch = await compare(password, user.passwordHash);
