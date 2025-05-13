@@ -6,7 +6,7 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="auth-layout">
       <div className="form-container">{children}</div>
-      <div className="sidebar ">
+      <div className="sidebar hidden md:block ">
         {' '}
         <img
           src="images/logins.png"
