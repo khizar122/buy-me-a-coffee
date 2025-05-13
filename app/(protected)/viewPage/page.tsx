@@ -1,14 +1,13 @@
 'use client';
 
-// app/profile/[id]/page.tsx
 import {
   getUserById,
   getUserProfile,
   isCurrentUserProfile
 } from '@/actions/profile';
-import { processSupport } from '@/actions/support'; // Import the server action
+import { processSupport } from '@/actions/support';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import CoverPhoto from './coverPhoto';
 import ProfileCard from './profileCard';
 import SupportCard from './supportCard';
@@ -23,7 +22,7 @@ interface ProfileData {
   profileImage?: string;
 }
 
-export default function ProfilePage() {
+function ProfileContent() {
   const searchParams = useSearchParams();
   const userId = searchParams.get('userId');
   console.log('home', userId);
@@ -50,22 +49,17 @@ export default function ProfilePage() {
         let data;
 
         if (userId) {
-          // If we have a userId in the URL, fetch that specific user
           data = await getUserById(userId);
-
-          // Check if this is the current user's profile
           const ownProfile = await isCurrentUserProfile(userId);
           setIsOwnProfile(ownProfile);
         } else {
-          // Otherwise fetch the current user's profile
           data = await getUserProfile();
-          setIsOwnProfile(true); // If no ID is provided, assume it's the current user's profile
+          setIsOwnProfile(true);
         }
 
         console.log('Profile data:', data);
 
         if (data) {
-          // Set the actual data from the database
           const profileInfo = {
             id: data.id,
             fullName: data.fullName,
@@ -78,7 +72,6 @@ export default function ProfilePage() {
 
           setProfileData(profileInfo);
 
-          // Store the viewed profile info in localStorage for the navbar
           if (!isOwnProfile) {
             localStorage.setItem(
               'viewedProfile',
@@ -88,7 +81,6 @@ export default function ProfilePage() {
               })
             );
           } else {
-            // If it's own profile, clear the viewed profile
             localStorage.removeItem('viewedProfile');
           }
         }
@@ -101,7 +93,6 @@ export default function ProfilePage() {
 
     loadProfileData();
 
-    // Clear viewedProfile from localStorage when component unmounts
     return () => {
       localStorage.removeItem('viewedProfile');
     };
@@ -118,7 +109,6 @@ export default function ProfilePage() {
   };
 
   const handleEditProfile = () => {
-    // Here you would typically open a modal or navigate to edit page
     if (profileData) {
       const newAboutMe = prompt('Update your bio:', profileData.aboutMe);
       if (newAboutMe !== null) {
@@ -146,7 +136,6 @@ export default function ProfilePage() {
     });
 
     try {
-      // Call the server action to process the support
       const result = await processSupport({
         name,
         email,
@@ -162,14 +151,8 @@ export default function ProfilePage() {
           success: true,
           error: null
         });
-
-        // Show success message
         console.log('Support successful:', result.message);
 
-        // You could also use a toast notification here
-        // toast.success('Thank you for your support! You are now following this creator.');
-
-        // Clear success message after 5 seconds
         setTimeout(() => {
           setSupportStatus((prev) => ({
             ...prev,
@@ -211,23 +194,19 @@ export default function ProfilePage() {
     );
   }
 
-  // If data is not loaded yet (null), don't render the components
   if (!profileData) {
     return null;
   }
 
   return (
     <div className="min-h-screen bg-profile-bg">
-      {/* Container for relative positioning */}
       <div className="relative">
-        {/* Cover Photo Component */}
         <CoverPhoto
           initialImage={profileData.coverImage}
           onImageChange={handleCoverImageChange}
-          editable={isOwnProfile} // Only show edit controls if it's the user's own profile
+          editable={isOwnProfile}
         />
 
-        {/* Cards that overlap with the cover photo */}
         <div className="max-w-5xl mx-auto px-4 relative -mt-24">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div className="md:col-span-1">
@@ -235,7 +214,7 @@ export default function ProfilePage() {
                 username={profileData.fullName}
                 bio={profileData.aboutMe}
                 onEdit={handleEditProfile}
-                isEditable={isOwnProfile} // Only allow editing if it's the user's own profile
+                isEditable={isOwnProfile}
               />
             </div>
             <div className="md:col-span-1">
@@ -247,7 +226,6 @@ export default function ProfilePage() {
                     onSupport={handleSupport}
                   />
 
-                  {/* Support status messages */}
                   {supportStatus.success && (
                     <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-lg">
                       Thank you for your support! You are now following this
@@ -269,7 +247,6 @@ export default function ProfilePage() {
                     This is your profile. You can edit your information by
                     clicking the edit button.
                   </p>
-                  {/* Add more stats or information here */}
                 </div>
               )}
             </div>
@@ -277,5 +254,19 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-profile-bg flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      }
+    >
+      <ProfileContent />
+    </Suspense>
   );
 }
