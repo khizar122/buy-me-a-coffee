@@ -167,10 +167,28 @@ const Navbar = () => {
           )}
         </div>
 
+        {/* Center - Navigation menu items (only visible on /viewPage) */}
+        {isViewPage && (
+          <div className="flex items-center space-x-8">
+            <Link
+              href="/dashboard"
+              className="text-gray-700 hover:text-gray-900 font-medium"
+            >
+              Home
+            </Link>
+            <Link
+              href="/exploreCreators"
+              className="text-gray-700 hover:text-gray-900 font-medium"
+            >
+              Explore Creator
+            </Link>
+          </div>
+        )}
+
         {/* Right side - user menu */}
         <div className="flex items-end gap-4">
           {/* Add test button (remove in production) */}
-          {process.env.NODE_ENV !== 'production' &&
+          {/* {process.env.NODE_ENV !== 'production' &&
             pathname === '/viewPage' && (
               <button
                 onClick={handleUpdateProfile}
@@ -178,7 +196,7 @@ const Navbar = () => {
               >
                 Update Profile (Test)
               </button>
-            )}
+            )} */}
 
           <div className="flex items-center gap-3 pl-4 border-l">
             <img

@@ -121,7 +121,7 @@ const Sidebar = () => {
         <div className="flex flex-col h-full">
           <div className="h-16 flex items-center px-8">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <img src="/images/sidelogo.png" alt="PV RUGS" className="h-14" />
+              <img src="/images/drink.svg" alt="PV RUGS" className="h-14" />
             </Link>
           </div>
 

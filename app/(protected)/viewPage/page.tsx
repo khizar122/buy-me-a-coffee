@@ -6,7 +6,8 @@ import {
   getUserProfile,
   isCurrentUserProfile
 } from '@/actions/profile';
-import { useParams } from 'next/navigation';
+import { processSupport } from '@/actions/support'; // Import the server action
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import CoverPhoto from './coverPhoto';
 import ProfileCard from './profileCard';
@@ -23,26 +24,48 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
-  const { id: userId } = useParams();
+  const searchParams = useSearchParams();
+  const userId = searchParams.get('userId');
+  console.log('home', userId);
+
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [supportStatus, setSupportStatus] = useState<{
+    loading: boolean;
+    success: boolean;
+    error: string | null;
+  }>({
+    loading: false,
+    success: false,
+    error: null
+  });
 
+  console.log('data', profileData);
+
+  // Fetch user profile data when component mounts
   useEffect(() => {
     async function loadProfileData() {
       try {
         let data;
 
         if (userId) {
+          // If we have a userId in the URL, fetch that specific user
           data = await getUserById(userId);
+
+          // Check if this is the current user's profile
           const ownProfile = await isCurrentUserProfile(userId);
           setIsOwnProfile(ownProfile);
         } else {
+          // Otherwise fetch the current user's profile
           data = await getUserProfile();
-          setIsOwnProfile(true);
+          setIsOwnProfile(true); // If no ID is provided, assume it's the current user's profile
         }
 
+        console.log('Profile data:', data);
+
         if (data) {
+          // Set the actual data from the database
           const profileInfo = {
             id: data.id,
             fullName: data.fullName,
@@ -55,6 +78,7 @@ export default function ProfilePage() {
 
           setProfileData(profileInfo);
 
+          // Store the viewed profile info in localStorage for the navbar
           if (!isOwnProfile) {
             localStorage.setItem(
               'viewedProfile',
@@ -64,6 +88,7 @@ export default function ProfilePage() {
               })
             );
           } else {
+            // If it's own profile, clear the viewed profile
             localStorage.removeItem('viewedProfile');
           }
         }
@@ -76,23 +101,95 @@ export default function ProfilePage() {
 
     loadProfileData();
 
+    // Clear viewedProfile from localStorage when component unmounts
     return () => {
       localStorage.removeItem('viewedProfile');
     };
   }, [userId]);
 
   const handleCoverImageChange = (imageUrl: string | null) => {
+    console.log('Cover image changed:', imageUrl);
     if (profileData) {
-      setProfileData({ ...profileData, coverImage: imageUrl });
+      setProfileData({
+        ...profileData,
+        coverImage: imageUrl
+      });
     }
   };
 
   const handleEditProfile = () => {
+    // Here you would typically open a modal or navigate to edit page
     if (profileData) {
       const newAboutMe = prompt('Update your bio:', profileData.aboutMe);
       if (newAboutMe !== null) {
-        setProfileData({ ...profileData, aboutMe: newAboutMe });
+        setProfileData({
+          ...profileData,
+          aboutMe: newAboutMe
+        });
       }
+    }
+  };
+
+  const handleSupport = async (
+    name: string,
+    email: string,
+    message: string,
+    amount: number,
+    isRecurring: boolean
+  ) => {
+    if (!userId || !profileData) return;
+
+    setSupportStatus({
+      loading: true,
+      success: false,
+      error: null
+    });
+
+    try {
+      // Call the server action to process the support
+      const result = await processSupport({
+        name,
+        email,
+        message,
+        amount,
+        isRecurring,
+        creatorId: userId
+      });
+
+      if (result.success) {
+        setSupportStatus({
+          loading: false,
+          success: true,
+          error: null
+        });
+
+        // Show success message
+        console.log('Support successful:', result.message);
+
+        // You could also use a toast notification here
+        // toast.success('Thank you for your support! You are now following this creator.');
+
+        // Clear success message after 5 seconds
+        setTimeout(() => {
+          setSupportStatus((prev) => ({
+            ...prev,
+            success: false
+          }));
+        }, 5000);
+      } else {
+        setSupportStatus({
+          loading: false,
+          success: false,
+          error: result.error || 'Failed to process support'
+        });
+      }
+    } catch (error) {
+      console.error('Error handling support:', error);
+      setSupportStatus({
+        loading: false,
+        success: false,
+        error: 'An unexpected error occurred'
+      });
     }
   };
 
@@ -102,25 +199,35 @@ export default function ProfilePage() {
         <div className="w-full h-64 bg-gray-200 animate-pulse"></div>
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 -mt-20">
-            <div className="bg-gray-200 animate-pulse h-72 rounded-lg"></div>
-            <div className="bg-gray-200 animate-pulse h-72 rounded-lg"></div>
+            <div className="md:col-span-1">
+              <div className="bg-gray-200 animate-pulse h-72 rounded-lg"></div>
+            </div>
+            <div className="md:col-span-1">
+              <div className="bg-gray-200 animate-pulse h-72 rounded-lg"></div>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!profileData) return null;
+  // If data is not loaded yet (null), don't render the components
+  if (!profileData) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-profile-bg">
+      {/* Container for relative positioning */}
       <div className="relative">
+        {/* Cover Photo Component */}
         <CoverPhoto
           initialImage={profileData.coverImage}
           onImageChange={handleCoverImageChange}
-          editable={isOwnProfile}
+          editable={isOwnProfile} // Only show edit controls if it's the user's own profile
         />
 
+        {/* Cards that overlap with the cover photo */}
         <div className="max-w-5xl mx-auto px-4 relative -mt-24">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div className="md:col-span-1">
@@ -128,25 +235,41 @@ export default function ProfilePage() {
                 username={profileData.fullName}
                 bio={profileData.aboutMe}
                 onEdit={handleEditProfile}
-                isEditable={isOwnProfile}
+                isEditable={isOwnProfile} // Only allow editing if it's the user's own profile
               />
             </div>
             <div className="md:col-span-1">
-              {!isOwnProfile ? (
-                <SupportCard
-                  username={profileData.fullName}
-                  supportTerm={profileData.supportTerm}
-                  onSupport={(name, message, amount, isRecurring) => {
-                    console.log(name, message, amount, isRecurring);
-                  }}
-                />
-              ) : (
+              {!isOwnProfile && (
+                <>
+                  <SupportCard
+                    username={profileData.fullName}
+                    supportTerm={profileData.supportTerm}
+                    onSupport={handleSupport}
+                  />
+
+                  {/* Support status messages */}
+                  {supportStatus.success && (
+                    <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-lg">
+                      Thank you for your support! You are now following this
+                      creator.
+                    </div>
+                  )}
+
+                  {supportStatus.error && (
+                    <div className="mt-4 p-4 bg-red-100 text-red-800 rounded-lg">
+                      {supportStatus.error}
+                    </div>
+                  )}
+                </>
+              )}
+              {isOwnProfile && (
                 <div className="bg-white p-6 rounded-xl shadow-sm">
                   <h2 className="text-2xl font-bold mb-4">Profile Stats</h2>
                   <p className="text-gray-600">
                     This is your profile. You can edit your information by
                     clicking the edit button.
                   </p>
+                  {/* Add more stats or information here */}
                 </div>
               )}
             </div>

@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import { Button } from '@/components/ui/button';
 import VerificationSuccess from '@/containers/(auth)/varify';
 import { AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 
 const VerifiedEmail = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -48,7 +48,7 @@ const VerifiedEmail = () => {
       <div className="flex flex-col gap-4 px-4 sm:px-16 w-full justify-center items-center min-h-screen">
         {/* Logo */}
         <div className="flex justify-center">
-          <img src="images/logo.svg" alt="Flzr" className="h-20" />
+          <img src="images/drink.jpg" alt="Flzr" className="h-20" />
         </div>
         <div className="text-center p-8 bg-white rounded-lg shadow-md w-full max-w-md">
           <div className="flex flex-col items-center">

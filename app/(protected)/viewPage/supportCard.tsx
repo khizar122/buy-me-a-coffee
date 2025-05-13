@@ -1,13 +1,16 @@
 'use client';
 
-// components/SupportCard.tsx
+// app/profile/[id]/supportCard.tsx
 import { useEffect, useState } from 'react';
+import PaymentModal from './paymentModal';
+
 
 interface SupportCardProps {
   username: string;
   supportTerm: string | undefined;
   onSupport?: (
     name: string,
+    email: string,
     message: string,
     amount: number,
     isRecurring: boolean
@@ -16,17 +19,19 @@ interface SupportCardProps {
 
 const SupportCard: React.FC<SupportCardProps> = ({
   username,
-  supportTerm = '☕ coffee', // Default value if none provided
+  supportTerm = '🍊 orange juice', // Updated default value
   onSupport = () => {}
 }) => {
   const [name, setName] = useState('');
+  const [email, setEmail] = useState(''); // Added email field
   const [message, setMessage] = useState('');
   const [amount, setAmount] = useState(5); // Default to 5
   const [isRecurring, setIsRecurring] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Extract emoji and text from supportTerm
-  const [supportEmoji, setSupportEmoji] = useState('☕');
-  const [supportText, setSupportText] = useState('coffee');
+  const [supportEmoji, setSupportEmoji] = useState('🍊');
+  const [supportText, setSupportText] = useState('orange juice');
 
   useEffect(() => {
     if (supportTerm) {
@@ -35,7 +40,7 @@ const SupportCard: React.FC<SupportCardProps> = ({
       if (match) {
         // We found an emoji and possibly text
         setSupportEmoji(match[1]);
-        setSupportText(match[2] || 'coffee'); // Default to coffee if no text
+        setSupportText(match[2] || 'orange juice'); // Default to orange juice if no text
       } else {
         // No emoji found, just use the whole string as text
         setSupportText(supportTerm);
@@ -43,9 +48,32 @@ const SupportCard: React.FC<SupportCardProps> = ({
     }
   }, [supportTerm]);
 
-  const handleSubmit = (e: any) => {
+  const handleInitialSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSupport(name, message, amount, isRecurring);
+
+    // Validate required fields
+    if (!name || !email) {
+      alert('Please provide your name and email');
+      return;
+    }
+
+    // Show payment modal
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentSuccess = () => {
+    // Close modal first
+    setShowPaymentModal(false);
+
+    // Call the onSupport prop for any additional logic
+    onSupport(name, email, message, amount, isRecurring);
+
+    // Reset form
+    setName('');
+    setEmail('');
+    setMessage('');
+    setAmount(5);
+    setIsRecurring(false);
   };
 
   return (
@@ -85,7 +113,7 @@ const SupportCard: React.FC<SupportCardProps> = ({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleInitialSubmit}>
           <div className="mb-4">
             <input
               type="text"
@@ -93,6 +121,19 @@ const SupportCard: React.FC<SupportCardProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-300"
+              required
+            />
+          </div>
+
+          {/* New email field */}
+          <div className="mb-4">
+            <input
+              type="email"
+              placeholder="Your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-300"
+              required
             />
           </div>
 
@@ -168,6 +209,16 @@ const SupportCard: React.FC<SupportCardProps> = ({
           </button>
         </form>
       </div>
+
+      {/* Payment Modal Component */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSuccess={handlePaymentSuccess}
+        username={username}
+        amount={amount}
+        isRecurring={isRecurring}
+      />
     </div>
   );
 };
