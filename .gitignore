@@ -85,3 +85,4 @@ postcss.config.js
 
 # Next.js Cache
 .next/cache/
+.vercel
