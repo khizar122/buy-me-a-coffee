@@ -134,3 +134,29 @@ export async function processSupport({
     };
   }
 }
+export async function getFollowerCount(creatorId: string): Promise<number> {
+  try {
+    if (!creatorId) {
+      console.error('No creator ID provided');
+      return 0;
+    }
+
+    // Convert the string ID to BigInt for Prisma
+    const creatorBigInt = BigInt(creatorId);
+
+    // Count records where this user is the creatorId (being followed)
+    const count = await prisma.follow.count({
+      where: {
+        creatorId: creatorBigInt
+      }
+    });
+
+    return count;
+  } catch (error) {
+    console.error(
+      `Error getting follower count for creator ${creatorId}:`,
+      error
+    );
+    return 0;
+  }
+}
