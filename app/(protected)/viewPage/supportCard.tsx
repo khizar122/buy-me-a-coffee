@@ -1,8 +1,9 @@
 'use client';
 
 // app/profile/[id]/supportCard.tsx
+import { getUserProfile } from '@/actions/profile'; // Import your existing server action
 import { useEffect, useState } from 'react';
-import { toast } from 'sonner'; // Import toast
+import { toast } from 'sonner';
 import PaymentModal from './paymentModal';
 
 interface SupportCardProps {
@@ -19,16 +20,47 @@ interface SupportCardProps {
 
 const SupportCard: React.FC<SupportCardProps> = ({
   username,
-  supportTerm = '🍊 orange juice', // Default value
+  supportTerm = '🍊 orange juice',
   onSupport = async () => ({ success: true })
 }) => {
+  const [currentUser, setCurrentUser] = useState<{
+    id?: string;
+    username?: string;
+    email?: string;
+    fullName?: string;
+  } | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+
   const [name, setName] = useState('');
-  const [email, setEmail] = useState(''); // Added email field
+  const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
-  const [amount, setAmount] = useState(5); // Default to 5
+  const [amount, setAmount] = useState(5);
   const [isRecurring, setIsRecurring] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Get current user profile when component mounts
+  useEffect(() => {
+    async function fetchCurrentUser() {
+      setIsLoadingUser(true);
+      try {
+        const userData = await getUserProfile();
+        setCurrentUser(userData);
+
+        // If user is logged in, set form fields
+        if (userData?.email) {
+          setEmail(userData.email);
+          setName(userData.fullName || userData.username || '');
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      } finally {
+        setIsLoadingUser(false);
+      }
+    }
+
+    fetchCurrentUser();
+  }, []);
 
   // Extract emoji and text from supportTerm
   const [supportEmoji, setSupportEmoji] = useState('🍊');
@@ -39,11 +71,9 @@ const SupportCard: React.FC<SupportCardProps> = ({
       const match = supportTerm.match(/(\p{Emoji})\s?(.*)/u);
 
       if (match) {
-        // We found an emoji and possibly text
         setSupportEmoji(match[1]);
-        setSupportText(match[2] || 'orange juice'); // Default to orange juice if no text
+        setSupportText(match[2] || 'orange juice');
       } else {
-        // No emoji found, just use the whole string as text
         setSupportText(supportTerm);
       }
     }
@@ -55,6 +85,18 @@ const SupportCard: React.FC<SupportCardProps> = ({
     // Validate required fields
     if (!name || !email) {
       toast.error('Please provide your name and email');
+      return;
+    }
+
+    // Check if user is logged in
+    if (!currentUser) {
+      toast.error('You need to be logged in to support creators');
+      return;
+    }
+
+    // Check if email matches logged-in user's email
+    if (currentUser.email !== email) {
+      toast.error('Please use the email address associated with your account');
       return;
     }
 
@@ -96,9 +138,7 @@ const SupportCard: React.FC<SupportCardProps> = ({
           }, 1000);
         }
 
-        // Reset form
-        setName('');
-        setEmail('');
+        // Reset form (but keep the email and name from currentUser)
         setMessage('');
         setAmount(5);
         setIsRecurring(false);
@@ -117,6 +157,8 @@ const SupportCard: React.FC<SupportCardProps> = ({
       setIsProcessing(false);
     }
   };
+
+  const isLoggedIn = !!currentUser?.email;
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-md">
@@ -167,16 +209,24 @@ const SupportCard: React.FC<SupportCardProps> = ({
             />
           </div>
 
-          {/* Email field */}
+          {/* Email field - readonly if logged in */}
           <div className="mb-4">
             <input
               type="email"
               placeholder="Your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 border rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-300"
+              className={`w-full p-3 border rounded-lg ${
+                isLoggedIn ? 'bg-gray-200 cursor-not-allowed' : 'bg-gray-100'
+              } focus:outline-none focus:ring-2 focus:ring-pink-300`}
               required
+              readOnly={isLoggedIn} // Make readonly if logged in
             />
+            {isLoggedIn && (
+              <p className="mt-1 text-xs text-gray-500">
+                Support will be associated with your logged-in account
+              </p>
+            )}
           </div>
 
           <div className="mb-4">
@@ -243,12 +293,29 @@ const SupportCard: React.FC<SupportCardProps> = ({
             </button>
           </div>
 
+          {!isLoggedIn && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
+              <p>
+                You need to be logged in to support creators. Please sign in
+                first.
+              </p>
+            </div>
+          )}
+
           <button
             type="submit"
-            className="w-full bg-pink-500 text-white py-3 px-4 rounded-full hover:bg-pink-600 transition-colors font-medium text-lg"
-            disabled={isProcessing}
+            className={`w-full py-3 px-4 rounded-full font-medium text-lg ${
+              !isLoggedIn || isProcessing
+                ? 'bg-gray-400 text-white cursor-not-allowed'
+                : 'bg-pink-500 text-white hover:bg-pink-600 transition-colors'
+            }`}
+            disabled={!isLoggedIn || isProcessing}
           >
-            {isProcessing ? 'Processing...' : `Support £${amount}`}
+            {isProcessing
+              ? 'Processing...'
+              : !isLoggedIn
+                ? 'Please sign in to support'
+                : `Support £${amount}`}
           </button>
         </form>
       </div>

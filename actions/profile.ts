@@ -65,6 +65,7 @@ export async function getUserProfile() {
     return {
       id: currentUser.id.toString(),
       username: user.username,
+      email:user.email,
       fullName: user.displayName || user.username,
       bio: user.creatorTagline || '',
       aboutMe: user.aboutMe || '',
