@@ -2,8 +2,8 @@
 
 // app/profile/[id]/supportCard.tsx
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner'; // Import toast
 import PaymentModal from './paymentModal';
-
 
 interface SupportCardProps {
   username: string;
@@ -14,13 +14,13 @@ interface SupportCardProps {
     message: string,
     amount: number,
     isRecurring: boolean
-  ) => void;
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 const SupportCard: React.FC<SupportCardProps> = ({
   username,
-  supportTerm = '🍊 orange juice', // Updated default value
-  onSupport = () => {}
+  supportTerm = '🍊 orange juice', // Default value
+  onSupport = async () => ({ success: true })
 }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState(''); // Added email field
@@ -28,6 +28,7 @@ const SupportCard: React.FC<SupportCardProps> = ({
   const [amount, setAmount] = useState(5); // Default to 5
   const [isRecurring, setIsRecurring] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Extract emoji and text from supportTerm
   const [supportEmoji, setSupportEmoji] = useState('🍊');
@@ -53,7 +54,7 @@ const SupportCard: React.FC<SupportCardProps> = ({
 
     // Validate required fields
     if (!name || !email) {
-      alert('Please provide your name and email');
+      toast.error('Please provide your name and email');
       return;
     }
 
@@ -61,19 +62,60 @@ const SupportCard: React.FC<SupportCardProps> = ({
     setShowPaymentModal(true);
   };
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = async () => {
     // Close modal first
     setShowPaymentModal(false);
+    setIsProcessing(true);
 
-    // Call the onSupport prop for any additional logic
-    onSupport(name, email, message, amount, isRecurring);
+    // Show loading toast
+    const toastId = toast.loading('Processing your support...');
 
-    // Reset form
-    setName('');
-    setEmail('');
-    setMessage('');
-    setAmount(5);
-    setIsRecurring(false);
+    try {
+      // Call the onSupport prop and wait for result
+      const result = await onSupport(name, email, message, amount, isRecurring);
+
+      if (result.success) {
+        // Show success toast
+        toast.success(
+          `Congratulations! You supported ${username} with ${amount} ${supportEmoji}`,
+          {
+            id: toastId
+          }
+        );
+
+        // If recurring, show additional toast
+        if (isRecurring) {
+          setTimeout(() => {
+            toast.success(
+              `You will support ${username} with £${amount} monthly`,
+              {
+                icon: '🔄',
+                duration: 5000
+              }
+            );
+          }, 1000);
+        }
+
+        // Reset form
+        setName('');
+        setEmail('');
+        setMessage('');
+        setAmount(5);
+        setIsRecurring(false);
+      } else {
+        // Show error toast
+        toast.error(result.error || 'Failed to process support', {
+          id: toastId
+        });
+      }
+    } catch (error) {
+      console.error('Error processing support:', error);
+      toast.error('An unexpected error occurred', {
+        id: toastId
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -125,7 +167,7 @@ const SupportCard: React.FC<SupportCardProps> = ({
             />
           </div>
 
-          {/* New email field */}
+          {/* Email field */}
           <div className="mb-4">
             <input
               type="email"
@@ -204,8 +246,9 @@ const SupportCard: React.FC<SupportCardProps> = ({
           <button
             type="submit"
             className="w-full bg-pink-500 text-white py-3 px-4 rounded-full hover:bg-pink-600 transition-colors font-medium text-lg"
+            disabled={isProcessing}
           >
-            Support £{amount}
+            {isProcessing ? 'Processing...' : `Support £${amount}`}
           </button>
         </form>
       </div>

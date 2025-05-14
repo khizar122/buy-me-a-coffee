@@ -1,5 +1,6 @@
 'use server';
 
+// app/actions/support.ts
 import { prisma } from '@/lib/db/prisma';
 
 // Types for success/error responses
@@ -120,10 +121,10 @@ export async function processSupport({
       });
     }
 
+    // Just return success with no UI-specific message
     return {
       success: true,
-      message:
-        'Support processed successfully. You are now following this creator.'
+      message: 'Support processed successfully'
     };
   } catch (error) {
     console.error('Error processing support:', error);

@@ -8,6 +8,7 @@ import {
 import { processSupport } from '@/actions/support';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
+import { toast } from 'sonner'; // Import toast
 import CoverPhoto from './coverPhoto';
 import ProfileCard from './profileCard';
 import SupportCard from './supportCard';
@@ -31,11 +32,9 @@ function ProfileContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [supportStatus, setSupportStatus] = useState<{
-    loading: boolean;
     success: boolean;
     error: string | null;
   }>({
-    loading: false,
     success: false,
     error: null
   });
@@ -86,6 +85,7 @@ function ProfileContent() {
         }
       } catch (error) {
         console.error('Error loading profile:', error);
+        toast.error('Failed to load profile data');
       } finally {
         setIsLoading(false);
       }
@@ -105,6 +105,7 @@ function ProfileContent() {
         ...profileData,
         coverImage: imageUrl
       });
+      toast.success('Cover image updated successfully');
     }
   };
 
@@ -116,6 +117,7 @@ function ProfileContent() {
           ...profileData,
           aboutMe: newAboutMe
         });
+        toast.success('Profile updated successfully');
       }
     }
   };
@@ -127,15 +129,11 @@ function ProfileContent() {
     amount: number,
     isRecurring: boolean
   ) => {
-    if (!userId || !profileData) return;
-
-    setSupportStatus({
-      loading: true,
-      success: false,
-      error: null
-    });
+    if (!userId || !profileData)
+      return { success: false, error: 'Missing profile data' };
 
     try {
+      // Process the support - toasts will be handled by the SupportCard component
       const result = await processSupport({
         name,
         email,
@@ -145,34 +143,31 @@ function ProfileContent() {
         creatorId: userId
       });
 
-      if (result.success) {
-        setSupportStatus({
-          loading: false,
-          success: true,
-          error: null
-        });
-        console.log('Support successful:', result.message);
+      // Update local state for inline message display
+      setSupportStatus({
+        success: result.success,
+        error: result.error || null
+      });
 
+      // Clear success message after 5 seconds
+      if (result.success) {
         setTimeout(() => {
           setSupportStatus((prev) => ({
             ...prev,
             success: false
           }));
         }, 5000);
-      } else {
-        setSupportStatus({
-          loading: false,
-          success: false,
-          error: result.error || 'Failed to process support'
-        });
       }
+
+      // Return the result to let the SupportCard component handle toasts
+      return result;
     } catch (error) {
       console.error('Error handling support:', error);
       setSupportStatus({
-        loading: false,
         success: false,
         error: 'An unexpected error occurred'
       });
+      return { success: false, error: 'An unexpected error occurred' };
     }
   };
 
@@ -226,6 +221,7 @@ function ProfileContent() {
                     onSupport={handleSupport}
                   />
 
+                  {/* Keep the existing inline status messages */}
                   {supportStatus.success && (
                     <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-lg">
                       Thank you for your support! You are now following this
