@@ -68,7 +68,9 @@ const SupportCard: React.FC<SupportCardProps> = ({
 
   useEffect(() => {
     if (supportTerm) {
-      const match = supportTerm.match(/(\p{Emoji})\s?(.*)/u);
+      const match = supportTerm.match(
+        /([\uD800-\uDBFF][\uDC00-\uDFFF])\s?(.*)/
+      );
 
       if (match) {
         setSupportEmoji(match[1]);

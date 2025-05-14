@@ -22,7 +22,7 @@
   /* Center the form horizontally */
   align-items: center;
   /* Center the form vertically */
-  background-color: #e5ffff;
+  /* background-color: #e5ffff; */
   /* Optional background color for the form container */
   overflow: hidden;
   /* Prevent scroll bars in the form container */
@@ -33,5 +33,4 @@
   height: 100vh;
   /* Full viewport height */
   object-fit: cover;
-
 }

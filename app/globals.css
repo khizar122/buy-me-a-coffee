@@ -1,185 +1,71 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --primary: 38 100% 50%; /* Amber/orange color */
+    --primary-foreground: 0 0% 0%; /* Black text on primary */
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --secondary: 39 100% 95%; /* Light cream/beige */
+    --secondary-foreground: 0 0% 20%; /* Dark gray text on secondary */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --background: 39 100% 97%; /* Very light cream for background */
+    --foreground: 0 0% 20%; /* Dark gray for general text */
 
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 0 0% 20%; /* Dark gray text on cards */
 
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    --border: 39 15% 85%; /* Light beige border */
+    --input: 39 15% 85%; /* Light beige input border */
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --ring: 38 100% 50%; /* Amber/orange for focus rings */
 
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
-
-    --radius: 0.5rem;
-
-    --chart-1: 12 76% 61%;
-
-    --chart-2: 173 58% 39%;
-
-    --chart-3: 197 37% 24%;
-
-    --chart-4: 43 74% 66%;
-
-    --chart-5: 27 87% 67%;
+    --radius: 0.5rem; /* Border radius */
   }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-family: 'Inter', sans-serif;
-  }
-
-  .rdrDefinedRangesWrapper {
-    display: none;
-  }
-
-  .pac-container {
-    z-index: 10000 !important;
-    pointer-events: auto !important;
-  }
-
-  .pac-item {
-    cursor: pointer !important;
-  }
-
-  /* Add these new styles */
-  .pac-container .pac-item:focus,
-  .pac-container .pac-item:hover {
-    background-color: #f3f4f6 !important;
-  }
-
-  .pac-container .pac-item-selected {
-    background-color: #e5e7eb !important;
-  }
-
-  @media print {
-    .no-print {
-      display: none !important;
-      /* Hide elements with this class */
-    }
-  }
-
-  @media print {
-    .no-border {
-      border: none !important;
-    }
-  }
-
-  h1 {
-    font-size: 2.75rem;
-    /* 44px */
-    line-height: 1.2;
-    font-weight: 700;
-    margin: 1rem 0;
-  }
-
-
-  h2 {
-    font-size: 2.25rem;
-    /* 36px */
-    line-height: 1.25;
-    font-weight: 700;
-    margin: 0.83em 0;
-  }
-
-  h3 {
-    font-size: 1.875rem;
-    /* 30px */
-    line-height: 1.3;
-    font-weight: 600;
-    margin: 1em 0;
-  }
-
-  h4 {
-    font-size: 1.5rem;
-    /* 24px */
-    line-height: 1.35;
-    font-weight: 600;
-    margin: 1.33em 0;
-  }
-
-  h5 {
-    font-size: 1.25rem;
-    /* 20px */
-    line-height: 1.4;
-    font-weight: 600;
-    margin: 1.67em 0;
-  }
-
-  h6 {
-    font-size: 1.125rem;
-    /* 18px */
-    line-height: 1.4;
-    font-weight: 600;
-    margin: 2.33em 0;
-  }
-
-  p {
-    font-family: 'Inter', sans-serif;
-    margin: 1em 0;
-  }
-
-
   .dark {
-    --background: 240 10% 3.9%;
+    --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
-
-    --card: 240 10% 3.9%;
+    --card: 0 0% 3.9%;
     --card-foreground: 0 0% 98%;
-
-    --popover: 240 10% 3.9%;
+    --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-
     --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-
-    --secondary: 240 3.7% 15.9%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
-
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-
-    --accent: 240 3.7% 15.9%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
     --accent-foreground: 0 0% 98%;
-
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -187,66 +73,36 @@
   * {
     @apply border-border;
   }
-
-  /* body {
+  body {
     @apply bg-background text-foreground;
-  } */
-}
-
-/* Chrome, Safari, Edge, Opera */
-input[type='search']::-webkit-search-cancel-button {
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-/* Firefox */
-input[type='search']::-moz-search-cancel-button {
-  display: none;
-}
-
-/* Microsoft Edge */
-input[type='search']::-ms-clear {
-  display: none;
-}
-
-@media print {
-  .no-print {
-    display: none !important;
   }
-
-  .print-content {
-    margin: 0;
-    padding: 15px;
-  }
-
-
 }
 
-
-/* For Webkit browsers (Chrome, Safari) */
-::-webkit-scrollbar {
-  width: 5px;
-  /* made slightly thinner */
-  height: 5px;
+.auth-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: hsl(var(--secondary));
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+.form-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #e5e7eb;
-  /* Tailwind gray-200 - very light grey */
-  border-radius: 9999px;
+.sidebar {
+  width: 40%;
+  background: linear-gradient(135deg, hsl(38, 100%, 50%), hsl(35, 100%, 55%));
+  position: relative;
+  overflow: hidden;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #d1d5db;
-  /* Tailwind gray-300 - slightly darker on hover */
+.sidebar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-/* For Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #e5e7eb transparent;
-}
+/* Add any additional custom styles you need here */

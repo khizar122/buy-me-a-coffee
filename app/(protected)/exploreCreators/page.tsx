@@ -54,7 +54,6 @@ const followingCreators = [
   }
 ];
 
-
 // Mock data for published posts with local images
 const publishedPosts = {
   author: {
@@ -143,7 +142,7 @@ export default function TrendingCreatorsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-profile-bg">
+    <div className="min-h-screen  ">
       <div className="container max-w-4xl mx-auto px-4 py-6">
         <NavigationTabs activeTab={activeTab} onTabChange={handleTabChange} />
 

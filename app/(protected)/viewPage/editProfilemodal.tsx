@@ -1,15 +1,29 @@
 'use client';
 
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import EmojiPicker from 'emoji-picker-react';
+import { toast } from 'sonner';
 import {
   getUserProfile,
   updateProfile,
   uploadFeaturedVideo,
   uploadProfileImage
 } from '@/actions/profile';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import EmojiPicker from 'emoji-picker-react';
-import React, { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import {
+  Heart,
+  Lock,
+  ShoppingBag,
+  Link2,
+  Book,
+  Info,
+  ChevronDown,
+  Plus,
+  X,
+  Play,
+  ExternalLink
+} from 'lucide-react';
 
 interface EditProfileDialogProps {
   isOpen: boolean;
@@ -37,9 +51,9 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
   const [selectedEmoji, setSelectedEmoji] = useState('☕');
   const [coffeeText, setCoffeeText] = useState('coffee');
   const [showThemeColorPicker, setShowThemeColorPicker] = useState(false);
-  const [selectedThemeColor, setSelectedThemeColor] = useState('Cotton Candy');
+  const [selectedThemeColor, setSelectedThemeColor] = useState('Pumpkin Spice');
   const [selectedThemeColorCode, setSelectedThemeColorCode] =
-    useState('#ff66ff');
+    useState('#ff8833');
   const [displaySupporterCount, setDisplaySupporterCount] = useState(false);
   const [socialShareHandle, setSocialShareHandle] = useState('username');
 
@@ -56,19 +70,19 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
   const featuredVideoInputRef = useRef<HTMLInputElement>(null);
 
   const themeColors = [
-    { name: 'Cotton Candy', color: '#ff66ff' },
     { name: 'Pumpkin Spice', color: '#ff8833' },
+    { name: 'Cotton Candy', color: '#ff66ff' },
     { name: 'Serene Blue', color: '#4477ff' },
     { name: 'Plum Passion', color: '#9933ff' },
     { name: 'Crimson Sunset', color: '#ff4433' }
   ];
+
   const presetButtons = [
     { emoji: '☕', text: 'Coffee' },
     { emoji: '🍺', text: 'Beer' },
     { emoji: '🍕', text: 'Pizza' },
     { emoji: '📖', text: 'Book' }
   ];
-  
 
   // Fetch user profile data when dialog opens
   useEffect(() => {
@@ -93,7 +107,7 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
         if (userData.supportTerm) {
           // Check if the first character is an emoji
           const firstChar = userData.supportTerm.charAt(0);
-          const isEmoji = /\p{Emoji}/u.test(firstChar);
+          const isEmoji = /[\uD800-\uDBFF][\uDC00-\uDFFF]/.test(firstChar);
 
           if (isEmoji) {
             // Extract the emoji and the rest of the text
@@ -112,9 +126,9 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
         setSelectedThemeColor(
           userData.themeColor
             ? getThemeColorName(userData.themeColor)
-            : 'Cotton Candy'
+            : 'Pumpkin Spice'
         );
-        setSelectedThemeColorCode(userData.themeColor || '#ff66ff');
+        setSelectedThemeColorCode(userData.themeColor || '#ff8833');
         setDisplaySupporterCount(userData.showSupporterCount);
         setSocialShareHandle(userData.socialShareHandle || username);
         setSocialLinks(
@@ -130,9 +144,10 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
       setLoading(false);
     }
   };
+
   const getThemeColorName = (colorCode: string) => {
     const color = themeColors.find((c) => c.color === colorCode);
-    return color ? color.name : 'Cotton Candy';
+    return color ? color.name : 'Pumpkin Spice';
   };
 
   const addSocialLink = () => {
@@ -175,67 +190,66 @@ const EditProfileDialog: React.FC<EditProfileDialogProps> = ({
   };
 
   // Handler for profile image upload
-const handleProfileImageChange = async (
-  e: React.ChangeEvent<HTMLInputElement>
-) => {
-  const files = e.target.files;
-  if (!files || files.length === 0) return;
+  const handleProfileImageChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-  const file = files[0];
+    const file = files[0];
 
-  // Validate file type
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-  if (!allowedTypes.includes(file.type)) {
-    toast.error('Please upload a JPEG, PNG, GIF, or WEBP image');
-    return;
-  }
-
-  // Validate file size (max 5MB)
-  const maxSize = 5 * 1024 * 1024;
-  if (file.size > maxSize) {
-    toast.error('Maximum file size is 5MB');
-    return;
-  }
-
-  try {
-    setUploadingImage(true);
-
-    // Create a preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        setCurrentProfileImage(e.target.result as string);
-      }
-    };
-    reader.readAsDataURL(file);
-
-    // Upload the image
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const result = await uploadProfileImage(formData);
-
-    if (result.error) {
-      toast.error(result.error);
-      // Reset to previous image
-      setCurrentProfileImage(profileImage);
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please upload a JPEG, PNG, GIF, or WEBP image');
       return;
     }
 
-    toast.success('Profile picture updated successfully');
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('Maximum file size is 5MB');
+      return;
+    }
 
-    // Update with the actual URL from server
-    setCurrentProfileImage(result.imageUrl);
-  } catch (error) {
-    console.error('Upload error:', error);
-    toast.error('An unexpected error occurred');
-    // Reset to previous image
-    setCurrentProfileImage(profileImage);
-  } finally {
-    setUploadingImage(false);
-  }
-};
+    try {
+      setUploadingImage(true);
 
+      // Create a preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          setCurrentProfileImage(e.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+
+      // Upload the image
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const result = await uploadProfileImage(formData);
+
+      if (result.error) {
+        toast.error(result.error);
+        // Reset to previous image
+        setCurrentProfileImage(profileImage);
+        return;
+      }
+
+      toast.success('Profile picture updated successfully');
+
+      // Update with the actual URL from server
+      setCurrentProfileImage(result.imageUrl);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('An unexpected error occurred');
+      // Reset to previous image
+      setCurrentProfileImage(profileImage);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   // Handler for featured video upload
   const handleFeaturedVideoChange = async (
@@ -351,23 +365,23 @@ const handleProfileImageChange = async (
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-lg md:max-w-xl lg:max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+      <DialogContent className="w-full max-w-lg md:max-w-xl lg:max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card">
         {/* Fixed header that doesn't scroll */}
-        <div className="flex justify-between items-center px-3 sm:px-6 py-4 border-b border-gray-200 bg-white z-20 sticky top-0">
-          <DialogTitle className="text-base sm:text-lg font-medium">
+        <div className="flex justify-between items-center px-3 sm:px-6 py-4 border-b border-border bg-card z-20 sticky top-0">
+          <DialogTitle className="text-base sm:text-lg font-medium text-foreground">
             Edit Page
           </DialogTitle>
           <div className="flex space-x-2">
             <button
               onClick={() => onOpenChange(false)}
-              className="px-2 sm:px-4 py-1 sm:py-2 text-sm font-medium rounded-md"
+              className="px-2 sm:px-4 py-1 sm:py-2 text-sm font-medium rounded-md text-foreground/70 hover:text-foreground transition-colors"
               disabled={loading || uploadingImage || uploadingVideo}
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className={`px-2 sm:px-4 py-1 sm:py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 ${
+              className={`px-2 sm:px-4 py-1 sm:py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors ${
                 loading || uploadingImage || uploadingVideo
                   ? 'opacity-50 cursor-not-allowed'
                   : ''
@@ -380,10 +394,12 @@ const handleProfileImageChange = async (
         </div>
 
         {/* Scrollable content area */}
-        <div className="px-3 sm:px-6 py-4 overflow-y-auto flex-1">
+        <div className="px-3 sm:px-6 py-4 overflow-y-auto flex-1 bg-background">
           {/* Profile Photo */}
           <div className="mb-6">
-            <h4 className="text-sm font-medium mb-2">Profile photo</h4>
+            <h4 className="text-sm font-medium mb-2 text-foreground">
+              Profile photo
+            </h4>
             <div className="flex items-center">
               <div className="h-12 sm:h-16 w-12 sm:w-16 overflow-hidden rounded-md mr-4 relative">
                 {uploadingImage && (
@@ -392,12 +408,12 @@ const handleProfileImageChange = async (
                   </div>
                 )}
                 <img
-                  src={currentProfileImage}
+                  src={currentProfileImage || '/placeholder.svg'}
                   alt="Profile"
                   className="h-full w-full object-cover"
                 />
               </div>
-              <label className="px-3 sm:px-4 py-1 sm:py-2 border border-gray-300 rounded-md text-sm font-medium cursor-pointer">
+              <label className="px-3 sm:px-4 py-1 sm:py-2 border border-border rounded-md text-sm font-medium cursor-pointer bg-secondary/30 hover:bg-secondary/50 transition-colors text-foreground">
                 Upload
                 <input
                   type="file"
@@ -412,66 +428,63 @@ const handleProfileImageChange = async (
           </div>
 
           {/* Divider */}
-          <div className="border-t border-gray-200 my-6"></div>
+          <div className="border-t border-border my-6"></div>
 
           {/* Full Name */}
           <div className="mb-6">
-            <h4 className="text-sm font-medium mb-2">Full name</h4>
+            <h4 className="text-sm font-medium mb-2 text-foreground">
+              Full name
+            </h4>
             <input
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-100 rounded-md"
+              className="w-full px-3 py-2 bg-secondary/30 rounded-md border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
               placeholder="Your name"
               disabled={loading}
             />
           </div>
 
           {/* Divider */}
-          <div className="border-t border-gray-200 my-6"></div>
+          <div className="border-t border-border my-6"></div>
 
           {/* What are you creating? */}
           <div className="mb-6">
-            <h4 className="text-sm font-medium mb-2">What are you creating?</h4>
+            <h4 className="text-sm font-medium mb-2 text-foreground">
+              What are you creating?
+            </h4>
             <input
               type="text"
               value={bioText}
               onChange={(e) => setBioText(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-100 rounded-md"
+              className="w-full px-3 py-2 bg-secondary/30 rounded-md border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
               placeholder="Tell people what you're creating..."
               disabled={loading}
             />
           </div>
 
           {/* Divider */}
-          <div className="border-t border-gray-200 my-6"></div>
+          <div className="border-t border-border my-6"></div>
 
           {/* Arrange your sidebar */}
           <div className="mb-6">
-            <h4 className="text-sm font-medium mb-2">Arrange your sidebar</h4>
+            <h4 className="text-sm font-medium mb-2 text-foreground">
+              Arrange your sidebar
+            </h4>
             <div className="space-y-2">
               {/* Support */}
-              <div className="flex items-center justify-between border border-gray-200 rounded-md p-2 sm:p-3">
+              <div className="flex items-center justify-between border border-border rounded-md p-2 sm:p-3 bg-card">
                 <div className="flex items-center">
-                  <span className="mr-2 sm:mr-3">≡</span>
+                  <span className="mr-2 sm:mr-3 text-foreground/70">≡</span>
                   <div className="flex items-center">
-                    <div className="mr-2">
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                      </svg>
+                    <div className="mr-2 text-primary">
+                      <Heart size={18} />
                     </div>
                     <div className="max-w-[180px] sm:max-w-full">
-                      <p className="text-xs sm:text-sm font-medium">Support</p>
-                      <p className="text-xs text-gray-500 hidden sm:block">
+                      <p className="text-xs sm:text-sm font-medium text-foreground">
+                        Support
+                      </p>
+                      <p className="text-xs text-foreground/60 hidden sm:block">
                         One-time contributions from your fans
                       </p>
                     </div>
@@ -480,153 +493,86 @@ const handleProfileImageChange = async (
               </div>
 
               {/* Membership */}
-              <div className="flex items-center justify-between border border-gray-200 rounded-md p-2 sm:p-3">
+              <div className="flex items-center justify-between border border-border rounded-md p-2 sm:p-3 bg-card">
                 <div className="flex items-center">
-                  <span className="mr-2 sm:mr-3">≡</span>
+                  <span className="mr-2 sm:mr-3 text-foreground/70">≡</span>
                   <div className="flex items-center">
-                    <div className="mr-2">
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect
-                          x="3"
-                          y="11"
-                          width="18"
-                          height="11"
-                          rx="2"
-                          ry="2"
-                        ></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                      </svg>
+                    <div className="mr-2 text-primary">
+                      <Lock size={18} />
                     </div>
                     <div className="max-w-[180px] sm:max-w-full">
-                      <p className="text-xs sm:text-sm font-medium">
+                      <p className="text-xs sm:text-sm font-medium text-foreground">
                         Membership
                       </p>
-                      <p className="text-xs text-gray-500 hidden sm:block">
+                      <p className="text-xs text-foreground/60 hidden sm:block">
                         Recurring support for exclusive benefits
                       </p>
                     </div>
                   </div>
                 </div>
-                <button type="button" className="text-gray-500">
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                  </svg>
+                <button
+                  type="button"
+                  className="text-foreground/60 hover:text-foreground/80 transition-colors"
+                >
+                  <ExternalLink size={18} />
                 </button>
               </div>
 
               {/* Shop */}
-              <div className="flex items-center justify-between border border-gray-200 rounded-md p-2 sm:p-3">
+              <div className="flex items-center justify-between border border-border rounded-md p-2 sm:p-3 bg-card">
                 <div className="flex items-center">
-                  <span className="mr-2 sm:mr-3">≡</span>
+                  <span className="mr-2 sm:mr-3 text-foreground/70">≡</span>
                   <div className="flex items-center">
-                    <div className="mr-2">
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <path d="M16 10a4 4 0 0 1-8 0"></path>
-                      </svg>
+                    <div className="mr-2 text-primary">
+                      <ShoppingBag size={18} />
                     </div>
                     <div className="max-w-[180px] sm:max-w-full">
-                      <p className="text-xs sm:text-sm font-medium">Shop</p>
-                      <p className="text-xs text-gray-500 hidden sm:block">
+                      <p className="text-xs sm:text-sm font-medium text-foreground">
+                        Shop
+                      </p>
+                      <p className="text-xs text-foreground/60 hidden sm:block">
                         Sell your merchandise and creations
                       </p>
                     </div>
                   </div>
                 </div>
-                <button type="button" className="text-gray-500">
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                  </svg>
+                <button
+                  type="button"
+                  className="text-foreground/60 hover:text-foreground/80 transition-colors"
+                >
+                  <ExternalLink size={18} />
                 </button>
               </div>
             </div>
           </div>
 
           {/* Divider */}
-          <div className="border-t border-gray-200 my-6"></div>
+          <div className="border-t border-border my-6"></div>
 
           {/* About me */}
           <div className="mb-6">
-            <h4 className="text-sm font-medium mb-2">About me</h4>
-            <div className="bg-gray-100 rounded-md p-4">
+            <h4 className="text-sm font-medium mb-2 text-foreground">
+              About me
+            </h4>
+            <div className="bg-secondary/30 rounded-md p-4 border border-border">
               <div className="flex items-center mb-2">
-                <button type="button" className="p-1 mr-2">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                  </svg>
+                <button
+                  type="button"
+                  className="p-1 mr-2 text-foreground/70 hover:text-foreground/90 transition-colors"
+                >
+                  <Book size={16} />
                 </button>
-                <button type="button" className="p-1 mr-2">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                  </svg>
+                <button
+                  type="button"
+                  className="p-1 mr-2 text-foreground/70 hover:text-foreground/90 transition-colors"
+                >
+                  <ExternalLink size={16} />
                 </button>
               </div>
               <textarea
                 value={aboutMeText}
                 onChange={(e) => setAboutMeText(e.target.value)}
-                className="w-full bg-transparent border-none outline-none resize-none text-sm"
+                className="w-full bg-transparent border-none outline-none resize-none text-sm text-foreground"
                 disabled={loading}
               />
             </div>
@@ -634,7 +580,9 @@ const handleProfileImageChange = async (
 
           {/* Featured video */}
           <div className="mb-6">
-            <h4 className="text-sm font-medium mb-2">Featured video</h4>
+            <h4 className="text-sm font-medium mb-2 text-foreground">
+              Featured video
+            </h4>
             <div className="space-y-3">
               {/* Input for paste */}
               <input
@@ -642,14 +590,14 @@ const handleProfileImageChange = async (
                 value={featuredVideoUrl}
                 onChange={handleVideoUrlChange}
                 placeholder="Paste your YouTube or Vimeo link here"
-                className="w-full px-3 py-2 bg-gray-100 rounded-md"
+                className="w-full px-3 py-2 bg-secondary/30 rounded-md border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 disabled={loading || uploadingVideo}
               />
 
               {/* Or upload a video */}
               <div className="flex items-center">
-                <span className="text-xs text-gray-500 mr-2">or</span>
-                <label className="px-3 py-1 border border-gray-300 rounded-md text-xs font-medium cursor-pointer">
+                <span className="text-xs text-foreground/60 mr-2">or</span>
+                <label className="px-3 py-1 border border-border rounded-md text-xs font-medium cursor-pointer bg-secondary/30 hover:bg-secondary/50 transition-colors text-foreground">
                   Upload Video
                   <input
                     type="file"
@@ -664,7 +612,7 @@ const handleProfileImageChange = async (
 
               {/* Video preview */}
               {(videoPreview || featuredVideoUrl) && (
-                <div className="relative rounded-md overflow-hidden bg-gray-100">
+                <div className="relative rounded-md overflow-hidden bg-secondary/30 border border-border">
                   {uploadingVideo && (
                     <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
                       <div className="animate-spin h-8 w-8 border-4 border-white border-r-transparent rounded-full"></div>
@@ -681,40 +629,16 @@ const handleProfileImageChange = async (
                     featuredVideoUrl &&
                     (featuredVideoUrl.includes('youtube.com') ||
                     featuredVideoUrl.includes('youtu.be') ? (
-                      <div className="h-40 flex items-center justify-center bg-gray-800 text-white">
+                      <div className="h-40 flex items-center justify-center bg-secondary text-foreground">
                         <div className="text-center">
-                          <svg
-                            width="40"
-                            height="40"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="mx-auto mb-2"
-                          >
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                          </svg>
+                          <Play size={40} className="mx-auto mb-2" />
                           <p className="text-xs">YouTube Video</p>
                         </div>
                       </div>
                     ) : (
-                      <div className="h-40 flex items-center justify-center bg-gray-800 text-white">
+                      <div className="h-40 flex items-center justify-center bg-secondary text-foreground">
                         <div className="text-center">
-                          <svg
-                            width="40"
-                            height="40"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="mx-auto mb-2"
-                          >
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                          </svg>
+                          <Play size={40} className="mx-auto mb-2" />
                           <p className="text-xs">
                             Video URL: {featuredVideoUrl.substring(0, 30)}...
                           </p>
@@ -726,7 +650,7 @@ const handleProfileImageChange = async (
                   {/* Remove button */}
                   <button
                     type="button"
-                    className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1 text-white"
+                    className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1 text-white hover:bg-opacity-70 transition-opacity"
                     onClick={() => {
                       setVideoPreview(null);
                       setVideoFile(null);
@@ -734,19 +658,7 @@ const handleProfileImageChange = async (
                     }}
                     disabled={uploadingVideo}
                   >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
+                    <X size={16} />
                   </button>
                 </div>
               )}
@@ -755,112 +667,63 @@ const handleProfileImageChange = async (
 
           {/* Social links */}
           <div className="mb-6">
-            <h4 className="text-sm font-medium mb-2">Social links</h4>
+            <h4 className="text-sm font-medium mb-2 text-foreground">
+              Social links
+            </h4>
             {socialLinks.map((link, index) => (
               <div
                 key={index}
-                className="bg-gray-100 rounded-md p-2 sm:p-3 flex items-center mb-2"
+                className="bg-secondary/30 rounded-md p-2 sm:p-3 flex items-center mb-2 border border-border"
               >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-gray-500 mr-2"
-                >
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                </svg>
+                <Link2 size={18} className="text-foreground/70 mr-2" />
                 <input
                   type="text"
                   value={link}
                   onChange={(e) => updateSocialLink(index, e.target.value)}
-                  className="bg-transparent flex-1 outline-none text-xs sm:text-sm truncate"
+                  className="bg-transparent flex-1 outline-none text-xs sm:text-sm truncate text-foreground"
                   disabled={loading}
                 />
                 <button
                   type="button"
-                  className="ml-2"
+                  className="ml-2 text-foreground/60 hover:text-foreground/80 transition-colors"
                   onClick={() => removeSocialLink(index)}
                   disabled={loading || socialLinks.length <= 1}
                 >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-gray-500"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
+                  <X size={16} />
                 </button>
               </div>
             ))}
             <button
               onClick={addSocialLink}
-              className="flex items-center mt-3 text-xs sm:text-sm px-3 sm:px-4 py-1 sm:py-2 rounded-full border border-blue-600 text-blue-600"
+              className="flex items-center mt-3 text-xs sm:text-sm px-3 sm:px-4 py-1 sm:py-2 rounded-full border border-primary text-primary hover:bg-primary/10 transition-colors"
               disabled={loading}
               type="button"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-1"
-              >
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              + Add social link
+              <Plus size={14} className="mr-1" />
+              Add social link
             </button>
           </div>
 
           {/* Divider */}
-          <div className="border-t border-gray-200 my-6"></div>
+          <div className="border-t border-border my-6"></div>
 
           {/* Replace coffee with anything you like */}
           <div className="mb-6">
-            <h4 className="text-sm font-medium mb-2">
+            <h4 className="text-sm font-medium mb-2 text-foreground">
               Replace "coffee" with anything you like
             </h4>
             <div className="flex items-center">
               <div className="relative">
                 <button
-                  className="bg-white border border-gray-200 p-2 rounded-md mr-2 sm:mr-3 flex items-center justify-center"
+                  className="bg-card border border-border p-2 rounded-md mr-2 sm:mr-3 flex items-center justify-center hover:bg-secondary/30 transition-colors"
                   onClick={toggleEmojiPicker}
                   type="button"
                   disabled={loading}
                 >
-                  <span role="img" aria-label="emoji">
+                  <span role="img" aria-label="emoji" className="mr-1">
                     {selectedEmoji}
                   </span>
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="ml-1"
-                  >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
+                  <ChevronDown size={12} />
                 </button>
                 {/* Emoji Picker from emoji-picker-react - positioned relative to screen size */}
                 {showEmojiPicker && (
@@ -873,7 +736,7 @@ const handleProfileImageChange = async (
                 type="text"
                 value={coffeeText}
                 onChange={(e) => setCoffeeText(e.target.value)}
-                className="bg-gray-100 rounded-md p-2 sm:p-3 flex-1 text-sm"
+                className="bg-secondary/30 rounded-md p-2 sm:p-3 flex-1 text-sm border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 disabled={loading}
               />
             </div>
@@ -881,7 +744,7 @@ const handleProfileImageChange = async (
               {presetButtons.map((preset) => (
                 <button
                   key={preset.text}
-                  className="flex items-center bg-gray-100 rounded-md px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm"
+                  className="flex items-center bg-secondary/30 rounded-md px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm border border-border text-foreground hover:bg-secondary/50 transition-colors"
                   onClick={() => {
                     setSelectedEmoji(preset.emoji);
                     setCoffeeText(preset.text);
@@ -904,41 +767,32 @@ const handleProfileImageChange = async (
 
           {/* Theme color */}
           <div className="mb-6">
-            <h4 className="text-sm font-medium mb-2">Theme color</h4>
+            <h4 className="text-sm font-medium mb-2 text-foreground">
+              Theme color
+            </h4>
             <div className="flex items-center relative">
               <div
-                className="w-8 h-8 sm:w-10 sm:h-10 rounded-md mr-2 sm:mr-3"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-md mr-2 sm:mr-3 border border-border"
                 style={{ backgroundColor: selectedThemeColorCode }}
               ></div>
               <div className="relative flex-1">
                 <button
-                  className="flex items-center justify-between bg-white border border-gray-200 rounded-md px-2 sm:px-3 py-1 sm:py-2 w-full text-xs sm:text-sm"
+                  className="flex items-center justify-between bg-card border border-border rounded-md px-2 sm:px-3 py-1 sm:py-2 w-full text-xs sm:text-sm hover:bg-secondary/30 transition-colors text-foreground"
                   onClick={toggleThemeColorPicker}
                   type="button"
                   disabled={loading}
                 >
                   <span>{selectedThemeColor}</span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
+                  <ChevronDown size={14} />
                 </button>
 
                 {/* Theme color picker popover */}
                 {showThemeColorPicker && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-20 max-h-40 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-md shadow-lg z-20 max-h-40 overflow-y-auto">
                     {themeColors.map((theme) => (
                       <button
                         key={theme.name}
-                        className="flex items-center w-full px-2 sm:px-3 py-2 hover:bg-gray-100 text-xs sm:text-sm"
+                        className="flex items-center w-full px-2 sm:px-3 py-2 hover:bg-secondary/30 text-xs sm:text-sm text-foreground transition-colors"
                         onClick={() =>
                           selectThemeColor(theme.name, theme.color)
                         }
@@ -946,7 +800,7 @@ const handleProfileImageChange = async (
                         disabled={loading}
                       >
                         <div
-                          className="w-4 h-4 sm:w-6 sm:h-6 rounded-full mr-2 sm:mr-3"
+                          className="w-4 h-4 sm:w-6 sm:h-6 rounded-full mr-2 sm:mr-3 border border-border"
                           style={{ backgroundColor: theme.color }}
                         ></div>
                         <span>{theme.name}</span>
@@ -962,38 +816,31 @@ const handleProfileImageChange = async (
           <div className="mb-6">
             <div className="flex justify-between items-center">
               <div className="flex items-center">
-                <h4 className="text-xs sm:text-sm font-medium">
+                <h4 className="text-xs sm:text-sm font-medium text-foreground">
                   Display supporter count
                 </h4>
                 <button
-                  className="ml-1 sm:ml-2"
+                  className="ml-1 sm:ml-2 text-foreground/60 hover:text-foreground/80 transition-colors"
                   type="button"
                   disabled={loading}
                 >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                  </svg>
+                  <Info size={14} />
                 </button>
               </div>
               <button
-                className={`w-10 sm:w-12 h-5 sm:h-6 rounded-full flex items-center p-1 transition-colors ${displaySupporterCount ? 'bg-black' : 'bg-gray-200'}`}
+                className={`w-10 sm:w-12 h-5 sm:h-6 rounded-full flex items-center p-1 transition-colors ${
+                  displaySupporterCount ? 'bg-primary' : 'bg-secondary/50'
+                }`}
                 onClick={toggleSupporterCount}
                 type="button"
                 disabled={loading}
               >
                 <div
-                  className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white transform transition-transform ${displaySupporterCount ? 'translate-x-5 sm:translate-x-6' : 'translate-x-0'}`}
+                  className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white transform transition-transform ${
+                    displaySupporterCount
+                      ? 'translate-x-5 sm:translate-x-6'
+                      : 'translate-x-0'
+                  }`}
                 ></div>
               </button>
             </div>
@@ -1002,31 +849,24 @@ const handleProfileImageChange = async (
           {/* Social sharing */}
           <div className="mb-6">
             <div className="flex items-center mb-2">
-              <h4 className="text-xs sm:text-sm font-medium">Social sharing</h4>
-              <button className="ml-1 sm:ml-2" type="button" disabled={loading}>
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="16" x2="12" y2="12"></line>
-                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                </svg>
+              <h4 className="text-xs sm:text-sm font-medium text-foreground">
+                Social sharing
+              </h4>
+              <button
+                className="ml-1 sm:ml-2 text-foreground/60 hover:text-foreground/80 transition-colors"
+                type="button"
+                disabled={loading}
+              >
+                <Info size={14} />
               </button>
             </div>
-            <div className="bg-gray-100 rounded-md p-2 sm:p-3 flex items-center mb-4">
-              <span className="text-gray-500 mr-2">@</span>
+            <div className="bg-secondary/30 rounded-md p-2 sm:p-3 flex items-center mb-4 border border-border">
+              <span className="text-foreground/70 mr-2">@</span>
               <input
                 type="text"
                 value={socialShareHandle}
                 onChange={(e) => setSocialShareHandle(e.target.value)}
-                className="bg-transparent flex-1 outline-none text-xs sm:text-sm"
+                className="bg-transparent flex-1 outline-none text-xs sm:text-sm text-foreground"
                 disabled={loading}
               />
             </div>

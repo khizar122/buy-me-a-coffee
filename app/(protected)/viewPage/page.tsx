@@ -173,7 +173,7 @@ function ProfileContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-profile-bg py-4 sm:py-6 md:py-8">
+      <div className="min-h-screen   py-4 sm:py-6 md:py-8">
         <div className="w-full h-64 bg-gray-200 animate-pulse"></div>
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 -mt-20">
@@ -194,7 +194,7 @@ function ProfileContent() {
   }
 
   return (
-    <div className="min-h-screen bg-profile-bg">
+    <div className="min-h-screen  ">
       <div className="relative">
         <CoverPhoto
           initialImage={profileData.coverImage}
@@ -257,7 +257,7 @@ export default function ProfilePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-profile-bg flex items-center justify-center">
+        <div className="min-h-screen   flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       }

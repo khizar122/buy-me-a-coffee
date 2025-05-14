@@ -2,31 +2,26 @@
 
 import { useRouter } from 'next/navigation';
 
-
 export default function ComingSoonPage({
   title = 'Coming Soon',
   description = "We're working hard to bring you this feature. Stay tuned!",
- 
+
   redirectPath = '/',
- 
+
   primaryColor = 'purple-500' // To match your existing theme
 }) {
   const router = useRouter();
- 
-
- 
 
   const handleGoBack = () => {
     router.push(redirectPath);
   };
 
- 
   return (
-    <div className="min-h-screen bg-profile-bg flex flex-col items-center justify-center px-4 py-6">
+    <div className="min-h-screen  flex flex-col items-center justify-center px-4 py-6">
       <div className="container max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-8 text-center">
           {/* Coming Soon Badge */}
-        
+
           {/* Image placeholder - replace with your own image */}
           <div className="relative w-64 h-64 mx-auto mb-8">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full flex items-center justify-center">
@@ -51,8 +46,6 @@ export default function ComingSoonPage({
           <p className="text-gray-600 text-lg mb-8 max-w-md mx-auto">
             {description}
           </p>
-
-       
 
           {/* Back Button */}
           <button

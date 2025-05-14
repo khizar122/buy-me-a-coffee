@@ -3,6 +3,7 @@ import {
   DollarSign,
   Edit,
   ExternalLink,
+  GlassWater,
   Grid,
   Heart,
   Home,
@@ -111,17 +112,20 @@ const Sidebar = () => {
             onClick={() => setIsOpen(true)}
             className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white shadow-lg"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-6 w-6 text-amber-600" />
           </button>
         )}
       </div>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden [@media(min-width:768px)]:block fixed inset-y-0 left-0 w-64 bg-[#a8e0f0] border-r border-gray-100">
+      <aside className="hidden [@media(min-width:768px)]:block fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-amber-100 to-amber-50 border-r border-amber-100">
         <div className="flex flex-col h-full">
-          <div className="h-16 flex items-center px-8">
+          <div className="h-16 flex items-center px-8 border-b border-amber-100">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <img src="/images/drink.svg" alt="PV RUGS" className="h-14" />
+              <GlassWater className="h-6 w-6 text-amber-600" />
+              <span className="font-bold text-lg text-gray-800">
+                DrinkWithMe
+              </span>
             </Link>
           </div>
 
@@ -133,19 +137,27 @@ const Sidebar = () => {
                     href={item.href}
                     className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors relative ${
                       isLinkActive(item.href)
-                        ? 'bg-blue-100 text-blue-900 font-medium before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-blue-900 before:rounded-l'
-                        : 'text-navy-900 hover:bg-blue-50'
+                        ? 'bg-amber-100 text-amber-900 font-medium before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500 before:rounded-l'
+                        : 'text-gray-700 hover:bg-amber-50'
                     }`}
                   >
-                    {item.icon}
-                    <span className="text-navy-900">{item.title}</span>
+                    <span
+                      className={
+                        isLinkActive(item.href)
+                          ? 'text-amber-600'
+                          : 'text-gray-500'
+                      }
+                    >
+                      {item.icon}
+                    </span>
+                    <span>{item.title}</span>
                   </Link>
                 </li>
               ))}
             </ul>
 
             <div className="mt-6">
-              <h3 className="text-xs font-semibold text-gray-500 px-4 mb-2">
+              <h3 className="text-xs font-semibold text-amber-600 px-4 mb-2">
                 MONETIZE
               </h3>
               <ul className="space-y-1">
@@ -155,15 +167,25 @@ const Sidebar = () => {
                       href={item.href}
                       className={`flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg transition-colors relative ${
                         isLinkActive(item.href)
-                          ? 'bg-blue-100 text-blue-900 font-medium before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-blue-900 before:rounded-l'
-                          : 'text-navy-900 hover:bg-blue-50'
+                          ? 'bg-amber-100 text-amber-900 font-medium before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500 before:rounded-l'
+                          : 'text-gray-700 hover:bg-amber-50'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        {item.icon}
-                        <span className="text-navy-900">{item.title}</span>
+                        <span
+                          className={
+                            isLinkActive(item.href)
+                              ? 'text-amber-600'
+                              : 'text-gray-500'
+                          }
+                        >
+                          {item.icon}
+                        </span>
+                        <span>{item.title}</span>
                       </div>
-                      {item.hasDropdown && <ChevronDown className="h-4 w-4" />}
+                      {item.hasDropdown && (
+                        <ChevronDown className="h-4 w-4 text-gray-400" />
+                      )}
                     </Link>
                   </li>
                 ))}
@@ -171,7 +193,7 @@ const Sidebar = () => {
             </div>
 
             <div className="mt-6">
-              <h3 className="text-xs font-semibold text-gray-500 px-4 mb-2">
+              <h3 className="text-xs font-semibold text-amber-600 px-4 mb-2">
                 SETTINGS
               </h3>
               <ul className="space-y-1">
@@ -181,12 +203,20 @@ const Sidebar = () => {
                       href={item.href}
                       className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors relative ${
                         isLinkActive(item.href)
-                          ? 'bg-blue-100 text-blue-900 font-medium before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-blue-900 before:rounded-l'
-                          : 'text-navy-900 hover:bg-blue-50'
+                          ? 'bg-amber-100 text-amber-900 font-medium before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500 before:rounded-l'
+                          : 'text-gray-700 hover:bg-amber-50'
                       }`}
                     >
-                      {item.icon}
-                      <span className="text-navy-900">{item.title}</span>
+                      <span
+                        className={
+                          isLinkActive(item.href)
+                            ? 'text-amber-600'
+                            : 'text-gray-500'
+                        }
+                      >
+                        {item.icon}
+                      </span>
+                      <span>{item.title}</span>
                     </Link>
                   </li>
                 ))}
@@ -205,25 +235,22 @@ const Sidebar = () => {
             onClick={() => setIsOpen(false)}
           />
           <aside
-            className="fixed inset-y-0 left-0 w-64 bg-[#e5ffff] border-r border-gray-100 z-40 [@media(min-width:768px)]:hidden
+            className="fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-amber-100 to-amber-50 border-r border-amber-100 z-40 [@media(min-width:768px)]:hidden
             animate-in slide-in-from-left duration-300"
           >
             <div className="flex flex-col h-full">
-              <div className="h-16 flex items-center justify-between px-6">
+              <div className="h-16 flex items-center justify-between px-6 border-b border-amber-100">
                 <Link href="/" className="flex items-center gap-2">
-                  <div className="bg-yellow-400 p-2 rounded-lg">
-                    <div className="w-6 h-6 flex items-center justify-center">
-                      <span role="img" aria-label="Coffee cup">
-                        ☕
-                      </span>
-                    </div>
-                  </div>
+                  <GlassWater className="h-5 w-5 text-amber-600" />
+                  <span className="font-bold text-lg text-gray-800">
+                    DrinkWithMe
+                  </span>
                 </Link>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="p-2 hover:bg-amber-100 rounded-lg transition-colors"
                 >
-                  <X className="h-6 w-6" />
+                  <X className="h-5 w-5 text-gray-500" />
                 </button>
               </div>
 
@@ -235,20 +262,28 @@ const Sidebar = () => {
                         href={item.href}
                         className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
                           isLinkActive(item.href)
-                            ? 'bg-blue-100 text-blue-900 font-medium'
-                            : 'text-navy-900 hover:bg-blue-50'
+                            ? 'bg-amber-100 text-amber-900 font-medium'
+                            : 'text-gray-700 hover:bg-amber-50'
                         }`}
                         onClick={() => setIsOpen(false)}
                       >
-                        {item.icon}
-                        <span className="text-navy-900">{item.title}</span>
+                        <span
+                          className={
+                            isLinkActive(item.href)
+                              ? 'text-amber-600'
+                              : 'text-gray-500'
+                          }
+                        >
+                          {item.icon}
+                        </span>
+                        <span>{item.title}</span>
                       </Link>
                     </li>
                   ))}
                 </ul>
 
                 <div className="mt-6">
-                  <h3 className="text-xs font-semibold text-gray-500 px-4 mb-2">
+                  <h3 className="text-xs font-semibold text-amber-600 px-4 mb-2">
                     MONETIZE
                   </h3>
                   <ul className="space-y-1">
@@ -258,17 +293,25 @@ const Sidebar = () => {
                           href={item.href}
                           className={`flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg transition-colors relative ${
                             isLinkActive(item.href)
-                              ? 'bg-blue-100 text-blue-900 font-medium before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-blue-900 before:rounded-l'
-                              : 'text-navy-900 hover:bg-blue-50'
+                              ? 'bg-amber-100 text-amber-900 font-medium before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-amber-500 before:rounded-l'
+                              : 'text-gray-700 hover:bg-amber-50'
                           }`}
                           onClick={() => setIsOpen(false)}
                         >
                           <div className="flex items-center gap-3">
-                            {item.icon}
-                            <span className="text-navy-900">{item.title}</span>
+                            <span
+                              className={
+                                isLinkActive(item.href)
+                                  ? 'text-amber-600'
+                                  : 'text-gray-500'
+                              }
+                            >
+                              {item.icon}
+                            </span>
+                            <span>{item.title}</span>
                           </div>
                           {item.hasDropdown && (
-                            <ChevronDown className="h-4 w-4" />
+                            <ChevronDown className="h-4 w-4 text-gray-400" />
                           )}
                         </Link>
                       </li>
@@ -277,7 +320,7 @@ const Sidebar = () => {
                 </div>
 
                 <div className="mt-6">
-                  <h3 className="text-xs font-semibold text-gray-500 px-4 mb-2">
+                  <h3 className="text-xs font-semibold text-amber-600 px-4 mb-2">
                     SETTINGS
                   </h3>
                   <ul className="space-y-1">
@@ -287,13 +330,21 @@ const Sidebar = () => {
                           href={item.href}
                           className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
                             isLinkActive(item.href)
-                              ? 'bg-blue-100 text-blue-900 font-medium'
-                              : 'text-navy-900 hover:bg-blue-50'
+                              ? 'bg-amber-100 text-amber-900 font-medium'
+                              : 'text-gray-700 hover:bg-amber-50'
                           }`}
                           onClick={() => setIsOpen(false)}
                         >
-                          {item.icon}
-                          <span className="text-navy-900">{item.title}</span>
+                          <span
+                            className={
+                              isLinkActive(item.href)
+                                ? 'text-amber-600'
+                                : 'text-gray-500'
+                            }
+                          >
+                            {item.icon}
+                          </span>
+                          <span>{item.title}</span>
                         </Link>
                       </li>
                     ))}
@@ -308,7 +359,7 @@ const Sidebar = () => {
   );
 };
 
-const ChevronDown = ({ className }) => {
+const ChevronDown = ({ className }: { className: string }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

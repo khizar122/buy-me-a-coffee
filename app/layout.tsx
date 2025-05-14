@@ -1,4 +1,3 @@
-
 import './globals.css';
 
 import NextTopLoader from 'nextjs-toploader';
@@ -16,14 +15,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
- 
-      <html lang="en">
-        <body className="flex min-h-screen w-full flex-col">
-          <NextTopLoader />
-          {children}
-          <Toaster position="top-right" />
-        </body>
-      </html>
-   
+    <html lang="en">
+      <body className="flex min-h-screen w-full flex-col">
+        <NextTopLoader />
+        {children}
+        <Toaster position="top-right" />
+      </body>
+    </html>
   );
 }

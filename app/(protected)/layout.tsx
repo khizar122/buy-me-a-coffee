@@ -14,13 +14,12 @@ export default function DashboardLayout({
   const [showSidebar, setShowSidebar] = useState(true);
 
   useEffect(() => {
-    // Check if the current path includes 'viewPage'
     const isViewPage = pathname?.includes('viewPage') || false;
     setShowSidebar(!isViewPage);
-  }, [pathname]); // Re-run effect when pathname changes
+  }, [pathname]);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="min-h-screen flex">
       {showSidebar && <Sidebar />}
       <div className="flex-1 flex flex-col">
         <Navbar />
